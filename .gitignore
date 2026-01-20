@@ -1,0 +1,25 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build
+**/bin/
+**/obj/
+
+# Logs
+*.log
+
+# Rider/VSCode (por si acaso)
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Secrets (no subir credenciales)
+**/appsettings.*.json
+!**/appsettings.json

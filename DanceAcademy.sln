@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35806.99
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanceAcademy.Domain", "DanceAcademy.Domain\DanceAcademy.Domain.csproj", "{52C8A23D-3142-40B3-83E1-75AC78DB2301}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanceAcademy.Application", "DanceAcademy.Application\DanceAcademy.Application.csproj", "{8AF00375-FE40-42B5-AB61-63ADDF194991}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanceAcademy.Infrastructure", "DanceAcademy.Infrastructure\DanceAcademy.Infrastructure.csproj", "{83E3BBE4-8007-4FA1-BE41-121600941BC5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanceAcademy.Api", "DanceAcademy.Api\DanceAcademy.Api.csproj", "{5A6FA5D8-079B-4CAF-AFA8-8C1616A3343A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Elementos de la solución", "Elementos de la solución", "{D107F4C8-89CC-BEA8-D3D7-CA6B7733353D}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+		.gitignore = .gitignore
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{52C8A23D-3142-40B3-83E1-75AC78DB2301}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52C8A23D-3142-40B3-83E1-75AC78DB2301}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52C8A23D-3142-40B3-83E1-75AC78DB2301}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52C8A23D-3142-40B3-83E1-75AC78DB2301}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AF00375-FE40-42B5-AB61-63ADDF194991}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AF00375-FE40-42B5-AB61-63ADDF194991}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AF00375-FE40-42B5-AB61-63ADDF194991}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AF00375-FE40-42B5-AB61-63ADDF194991}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83E3BBE4-8007-4FA1-BE41-121600941BC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83E3BBE4-8007-4FA1-BE41-121600941BC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83E3BBE4-8007-4FA1-BE41-121600941BC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83E3BBE4-8007-4FA1-BE41-121600941BC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A6FA5D8-079B-4CAF-AFA8-8C1616A3343A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A6FA5D8-079B-4CAF-AFA8-8C1616A3343A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A6FA5D8-079B-4CAF-AFA8-8C1616A3343A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A6FA5D8-079B-4CAF-AFA8-8C1616A3343A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C5BACC8A-85D6-439A-ADEA-3EF18D682993}
+	EndGlobalSection
+EndGlobal

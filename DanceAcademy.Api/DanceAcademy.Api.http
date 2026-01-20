@@ -1,0 +1,11 @@
+@DanceAcademy.Api_HostAddress = http://localhost:5178
+
+GET {{DanceAcademy.Api_HostAddress}}/todos/
+Accept: application/json
+
+###
+
+GET {{DanceAcademy.Api_HostAddress}}/todos/1
+Accept: application/json
+
+###
