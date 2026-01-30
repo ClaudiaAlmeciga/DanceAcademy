@@ -6,6 +6,7 @@ using DanceAcademy.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,36 @@ builder.Services.AddInfrastructure();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Definición de seguridad: Bearer JWT
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingrese el token así: Bearer {token}"
+    });
+
+    // Requisito global (para que Swagger muestre el candado y el botón Authorize)
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 
 // JWT
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -59,6 +89,8 @@ app.UseAuthorization();
 // Endpoints
 app.MapAuthEndpoints();
 app.MapMeAndAdmin();
+app.MapCoursesEndpoints();
+app.MapAdminCoursesEndpoints();
 
 // Seed Admin
 await app.SeedAdminAsync();
