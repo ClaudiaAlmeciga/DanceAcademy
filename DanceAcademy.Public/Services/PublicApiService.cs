@@ -145,11 +145,45 @@ public class PublicApiService(
         authStateProvider.NotifyStateChanged(null);
     }
 
+    public async Task<List<EnrollmentDto>?> GetMyEnrollmentsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/me/enrollments", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<EnrollmentDto>>(cancellationToken: ct);
+    }
+
+    public async Task<(bool Success, string? Error)> EnrollInCourseAsync(Guid courseId, CancellationToken ct = default)
+    {
+        var response = await Client.PostAsJsonAsync("/me/enrollments", new CreateEnrollmentRequest(courseId), ct);
+
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<MessageResponse>(cancellationToken: ct);
+            if (body?.Message is not null)
+                return (false, body.Message);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // El cuerpo de la respuesta de error no era JSON — se usa el mensaje genérico.
+        }
+
+        return (false, "No se pudo completar la inscripción. Intenta de nuevo.");
+    }
+
     private sealed record TokenResponse(
         [property: JsonPropertyName("access_token")] string AccessToken
     );
 
     private sealed record ErrorResponse(
         [property: JsonPropertyName("error")] string? Error
+    );
+
+    private sealed record MessageResponse(
+        [property: JsonPropertyName("message")] string? Message
     );
 }

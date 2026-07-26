@@ -1,0 +1,75 @@
+@page "/mis-cursos"
+@attribute [Authorize]
+
+@inject PublicApiService Api
+
+<PageTitle>Mis Cursos — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Mis cursos</h2>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (loadError is not null)
+    {
+        <div class="alert alert-danger">@loadError</div>
+    }
+    else if (enrollments is null || enrollments.Count == 0)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5 mb-3">Todavía no estás inscrito en ningún curso.</p>
+            <a href="/cursos" class="btn btn-primary">Explorar catálogo</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var enrollment in enrollments)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="da-course-card">
+                        <div class="da-course-card-body">
+                            <h5 class="da-course-title">@enrollment.CourseTitle</h5>
+                            <p class="text-muted small mb-0">
+                                Inscrito el @enrollment.EnrolledAt.ToLocalTime().ToString("dd/MM/yyyy")
+                            </p>
+                        </div>
+                        <div class="da-course-card-footer">
+                            <a href="/cursos/@enrollment.CourseId" class="btn btn-primary btn-sm w-100">Ir al curso →</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<EnrollmentDto>? enrollments;
+    private string? loadError;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            enrollments = await Api.GetMyEnrollmentsAsync();
+            if (enrollments is null)
+                loadError = "No se pudieron cargar tus cursos.";
+        }
+        catch
+        {
+            loadError = "No se pudieron cargar tus cursos.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

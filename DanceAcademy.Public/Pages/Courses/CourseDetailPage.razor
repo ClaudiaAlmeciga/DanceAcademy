@@ -41,6 +41,34 @@
             </p>
         }
 
+        <div class="mb-4">
+            @if (isAuthenticated)
+            {
+                @if (isEnrolled)
+                {
+                    <span class="badge bg-success">✓ Ya estás inscrito en este curso</span>
+                }
+                else if (course.PricingType == PricingType.Free)
+                {
+                    @if (enrollError is not null)
+                    {
+                        <div class="alert alert-danger py-2 small mb-2">@enrollError</div>
+                    }
+                    <button class="btn btn-primary" disabled="@isEnrolling" @onclick="HandleEnrollAsync">
+                        @(isEnrolling ? "Inscribiendo..." : "Inscribirme")
+                    </button>
+                }
+                else
+                {
+                    <span class="badge bg-light text-dark border">Inscripción disponible próximamente (pago)</span>
+                }
+            }
+            else
+            {
+                <a href="/login" class="btn btn-outline-primary btn-sm">Inicia sesión para inscribirte</a>
+            }
+        </div>
+
         @if (!course.Modules.Any())
         {
             <p class="text-muted">Este curso todavía no tiene contenido publicado.</p>
@@ -85,13 +113,46 @@
 @code {
     [Parameter] public Guid CourseId { get; set; }
 
+    [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
+
     private CourseDetailDto? course;
     private bool isLoading = true;
+    private bool isAuthenticated;
+    private bool isEnrolled;
+    private bool isEnrolling;
+    private string? enrollError;
 
     protected override async Task OnInitializedAsync()
     {
         course = await Api.GetCourseDetailAsync(CourseId);
         isLoading = false;
+
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+        }
+
+        if (isAuthenticated)
+        {
+            var myEnrollments = await Api.GetMyEnrollmentsAsync();
+            isEnrolled = myEnrollments?.Any(e => e.CourseId == CourseId) ?? false;
+        }
+    }
+
+    private async Task HandleEnrollAsync()
+    {
+        isEnrolling = true;
+        enrollError = null;
+
+        var (success, error) = await Api.EnrollInCourseAsync(CourseId);
+
+        isEnrolling = false;
+
+        if (success)
+            isEnrolled = true;
+        else
+            enrollError = error;
     }
 
     private static string PricingLabel(PricingType pricingType, decimal? price) => pricingType switch

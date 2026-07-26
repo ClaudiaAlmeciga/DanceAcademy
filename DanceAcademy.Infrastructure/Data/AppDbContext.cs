@@ -13,6 +13,8 @@ public sealed class AppDbContext : DbContext
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<Level> Levels => Set<Level>();
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+    public DbSet<Enrollment> Enrollments => Set<Enrollment>();
+    public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

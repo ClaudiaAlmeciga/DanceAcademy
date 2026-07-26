@@ -109,6 +109,7 @@ app.MapAdminLevelsEndpoints();
 app.MapPublicLevelsEndpoints();
 app.MapAdminSubscriptionPlansEndpoints();
 app.MapPublicSubscriptionPlansEndpoints();
+app.MapMeEnrollmentsEndpoints();
 
 // Seed Admin
 await app.SeedAdminAsync();
