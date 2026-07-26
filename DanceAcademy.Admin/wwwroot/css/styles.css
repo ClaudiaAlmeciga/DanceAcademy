@@ -151,6 +151,13 @@ body, button, input, select, textarea {
 }
 
 /* ===== PASSWORD TOGGLE ===== */
+/* Oculta el ícono nativo de "mostrar contraseña" de Edge/Windows —
+   sin esto se ve duplicado junto al ícono propio (da-password-toggle). */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
 .da-password-toggle {
     display: flex;
     align-items: center;

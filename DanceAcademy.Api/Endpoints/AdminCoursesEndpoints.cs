@@ -30,8 +30,11 @@ public static class AdminCoursesEndpoints
                     c.Id,
                     c.Title,
                     c.Description,
-                    c.Level.ToString(),
+                    c.LevelId,
+                    db.Levels.Where(l => l.Id == c.LevelId).Select(l => l.Name).SingleOrDefault() ?? "",
                     c.IsPublished,
+                    c.PricingType,
+                    c.Price,
                     c.Modules.Count,
                     c.Modules.SelectMany(m => m.Lessons).Count()
                 ))
@@ -54,17 +57,27 @@ public static class AdminCoursesEndpoints
                 .AsNoTracking()
                 .Include(c => c.Modules)
                     .ThenInclude(m => m.Lessons)
+                .Include(c => c.SubscriptionPlans)
                 .SingleOrDefaultAsync(c => c.Id == courseId, ct);
 
             if (course is null)
                 return Results.NotFound(new { message = "Curso no encontrado." });
 
+            var levelName = await db.Levels.AsNoTracking()
+                .Where(l => l.Id == course.LevelId)
+                .Select(l => l.Name)
+                .SingleOrDefaultAsync(ct) ?? "";
+
             var courseDetailDto = new AdminCourseDetailDto(
                 course.Id,
                 course.Title,
                 course.Description,
-                course.Level.ToString(),
+                course.LevelId,
+                levelName,
                 course.IsPublished,
+                course.PricingType,
+                course.Price,
+                course.SubscriptionPlans.Select(p => p.Id).ToList(),
                 course.Modules
                     .OrderBy(m => m.Order)
                     .Select(m => new AdminModuleDto(
@@ -103,8 +116,9 @@ public static class AdminCoursesEndpoints
             if (string.IsNullOrWhiteSpace(request.Title))
                 return Results.BadRequest(new { message = "Title es obligatorio." });
 
-            if (!Enum.TryParse<CourseLevel>(request.Level, ignoreCase: true, out var courseLevel))
-                return Results.BadRequest(new { message = "Nivel inválido. Valores: Beginner, Intermediate, Advanced." });
+            var levelExists = await db.Levels.AsNoTracking().AnyAsync(l => l.Id == request.LevelId, ct);
+            if (!levelExists)
+                return Results.BadRequest(new { message = "LevelId inválido." });
 
             var title = request.Title.Trim();
             var description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
@@ -116,7 +130,22 @@ public static class AdminCoursesEndpoints
             if (titleExists)
                 return Results.Conflict(new { message = "Ya existe un curso con ese título." });
 
-            var course = new Course(title, description, courseLevel, isPublished: false);
+            var planIds = request.SubscriptionPlanIds ?? [];
+            var plans = await db.SubscriptionPlans.Where(p => planIds.Contains(p.Id)).ToListAsync(ct);
+            if (plans.Count != planIds.Distinct().Count())
+                return Results.BadRequest(new { message = "Uno o más SubscriptionPlanIds son inválidos." });
+
+            var course = new Course(title, request.LevelId, description, isPublished: false);
+
+            try
+            {
+                course.SetPricing(request.PricingType, request.Price);
+                course.SetSubscriptionPlans(plans);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
 
             db.Courses.Add(course);
             await db.SaveChangesAsync(ct);
@@ -126,8 +155,10 @@ public static class AdminCoursesEndpoints
                 course.Id,
                 course.Title,
                 course.Description,
-                Level = course.Level.ToString(),
-                course.IsPublished
+                course.LevelId,
+                course.IsPublished,
+                course.PricingType,
+                course.Price
             });
         })
         .WithName("AdminCreateCourse");
@@ -145,10 +176,13 @@ public static class AdminCoursesEndpoints
             if (request is null || string.IsNullOrWhiteSpace(request.Title))
                 return Results.BadRequest(new { message = "Title es obligatorio." });
 
-            if (!Enum.TryParse<CourseLevel>(request.Level, ignoreCase: true, out var courseLevel))
-                return Results.BadRequest(new { message = "Nivel inválido. Valores: Beginner, Intermediate, Advanced." });
+            var levelExists = await db.Levels.AsNoTracking().AnyAsync(l => l.Id == request.LevelId, ct);
+            if (!levelExists)
+                return Results.BadRequest(new { message = "LevelId inválido." });
 
-            var course = await db.Courses.SingleOrDefaultAsync(c => c.Id == courseId, ct);
+            var course = await db.Courses
+                .Include(c => c.SubscriptionPlans)
+                .SingleOrDefaultAsync(c => c.Id == courseId, ct);
             if (course is null)
                 return Results.NotFound(new { message = "Curso no encontrado." });
 
@@ -163,11 +197,36 @@ public static class AdminCoursesEndpoints
             if (titleTaken)
                 return Results.Conflict(new { message = "Ya existe otro curso con ese título." });
 
+            var planIds = request.SubscriptionPlanIds ?? [];
+            var plans = await db.SubscriptionPlans.Where(p => planIds.Contains(p.Id)).ToListAsync(ct);
+            if (plans.Count != planIds.Distinct().Count())
+                return Results.BadRequest(new { message = "Uno o más SubscriptionPlanIds son inválidos." });
+
             course.UpdateDetails(title, string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim());
-            course.SetLevel(courseLevel);
+            course.SetLevel(request.LevelId);
+
+            try
+            {
+                course.SetPricing(request.PricingType, request.Price);
+                course.SetSubscriptionPlans(plans);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { message = ex.Message });
+            }
+
             await db.SaveChangesAsync(ct);
 
-            return Results.Ok(new { course.Id, course.Title, course.Description, Level = course.Level.ToString(), course.IsPublished });
+            return Results.Ok(new
+            {
+                course.Id,
+                course.Title,
+                course.Description,
+                course.LevelId,
+                course.IsPublished,
+                course.PricingType,
+                course.Price
+            });
         })
         .WithName("AdminUpdateCourse");
 

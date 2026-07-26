@@ -1,0 +1,125 @@
+@page "/levels/{levelId:guid}/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Editar nivel — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/levels" class="text-decoration-none text-muted small">← Volver a niveles</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <div class="card shadow-sm" style="max-width: 420px;">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Editar nivel</h5>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Name" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Orden <span class="text-danger">*</span></label>
+                    <input type="number" min="1" class="form-control" @bind="model.Order" />
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="isActive" @bind="model.IsActive" />
+                    <label class="form-check-label" for="isActive">Activo</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                    <a href="/levels" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid LevelId { get; set; }
+
+    private readonly LevelEditModel model = new();
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var level = await AdminApi.GetLevelDetailAsync(LevelId);
+            if (level is null)
+            {
+                loadError = "Nivel no encontrado.";
+                return;
+            }
+            model.Name = level.Name;
+            model.Order = level.Order;
+            model.IsActive = level.IsActive;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar el nivel.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Name))
+        {
+            errorMessage = "El nombre es obligatorio.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var request = new UpdateLevelRequest(model.Name.Trim(), model.Order, model.IsActive);
+        var response = await AdminApi.UpdateLevelAsync(LevelId, request);
+
+        isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/levels");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            errorMessage = "Ya existe otro nivel con ese nombre.";
+        }
+        else
+        {
+            errorMessage = $"Error al guardar (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private sealed class LevelEditModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Order { get; set; } = 1;
+        public bool IsActive { get; set; } = true;
+    }
+}

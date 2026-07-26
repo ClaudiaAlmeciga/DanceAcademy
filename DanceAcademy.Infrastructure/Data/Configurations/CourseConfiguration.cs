@@ -20,10 +20,15 @@ public sealed class CourseConfiguration : IEntityTypeConfiguration<Course>
         b.Property(x => x.Description)
             .HasMaxLength(2000);
 
-        b.Property(x => x.Level)
+        b.Property(x => x.LevelId).IsRequired();
+
+        b.Property(x => x.PricingType)
             .HasConversion<string>()
-            .HasMaxLength(20)
+            .HasMaxLength(30)
             .IsRequired();
+
+        b.Property(x => x.Price)
+            .HasColumnType("decimal(10,2)");
 
         b.Property(x => x.IsPublished).IsRequired();
 
@@ -33,10 +38,20 @@ public sealed class CourseConfiguration : IEntityTypeConfiguration<Course>
         // Índice para búsquedas básicas
         b.HasIndex(x => x.Title);
 
+        b.HasOne<Level>()
+            .WithMany()
+            .HasForeignKey(x => x.LevelId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Relación 1..N
         b.HasMany(x => x.Modules)
             .WithOne()
             .HasForeignKey(m => m.CourseId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Relación N..N — un curso puede estar incluido en varios planes
+        b.HasMany(x => x.SubscriptionPlans)
+            .WithMany()
+            .UsingEntity(j => j.ToTable("CourseSubscriptionPlans"));
     }
 }

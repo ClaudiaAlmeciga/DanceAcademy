@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using DanceAcademy.Application.DTOs.Public;
+using DanceAcademy.Application.Helpers;
 using DanceAcademy.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,18 +16,18 @@ public static class PublicCoursesEndpoints
         var group = app.MapGroup("/public")
             .WithTags("Public - Courses"); // Sin RequireAuthorization
 
-        //catálogo paginado + filtro level
+        //catálogo paginado + filtro levelId
         group.MapGet("/courses", async (
             [FromQuery] int page,
             [FromQuery] int pageSize,
-            [FromQuery] string? level,
+            [FromQuery] Guid? levelId,
             AppDbContext db,
             CancellationToken ct) =>
         {
             var query = new CoursesQuery(
                 Page: page == 0 ? 1 : page,
                 PageSize: pageSize == 0 ? 12 : pageSize,
-                Level: string.IsNullOrWhiteSpace(level) ? null : level.Trim()
+                LevelId: levelId
             );
 
             var (isValid, error) = query.Validate();
@@ -34,11 +35,8 @@ public static class PublicCoursesEndpoints
 
             var coursesQ = db.Courses.AsNoTracking().Where(c => c.IsPublished);
 
-            if (query.Level is not null)
-            {
-                // Filtro por enum guardado como string
-                coursesQ = coursesQ.Where(c => c.Level.ToString().ToLowerInvariant() == query.Level.ToLowerInvariant());
-            }
+            if (query.LevelId is not null)
+                coursesQ = coursesQ.Where(c => c.LevelId == query.LevelId);
 
             var total = await coursesQ.CountAsync(ct);
 
@@ -50,7 +48,10 @@ public static class PublicCoursesEndpoints
                     c.Id,
                     c.Title,
                     c.Description,
-                    c.Level.ToString()
+                    c.LevelId,
+                    db.Levels.Where(l => l.Id == c.LevelId).Select(l => l.Name).SingleOrDefault() ?? "",
+                    c.PricingType,
+                    c.Price
                 ))
                 .ToListAsync(ct);
 
@@ -74,11 +75,27 @@ public static class PublicCoursesEndpoints
                     c.Id,
                     c.Title,
                     c.Description,
-                    c.Level.ToString(),
+                    c.LevelId,
+                    db.Levels.Where(l => l.Id == c.LevelId).Select(l => l.Name).SingleOrDefault() ?? "",
+                    c.PricingType,
+                    c.Price,
+                    c.SubscriptionPlans
+                        .Where(p => p.IsActive)
+                        .Select(p => new SubscriptionPlanDto(p.Id, p.Name, p.Description, p.Price, p.BillingPeriodDays))
+                        .ToList(),
                     c.Modules
                         .Where(m => m.IsPublished)
                         .OrderBy(m => m.Order)
-                        .Select(m => new ModuleDto(m.Id, m.Title, m.Order))
+                        .Select(m => new ModuleDto(
+                            m.Id,
+                            m.Title,
+                            m.Order,
+                            m.Lessons
+                                .Where(l => l.IsPublished)
+                                .OrderBy(l => l.Order)
+                                .Select(l => new LessonDto(l.Id, l.Title, l.Order, l.VideoUrl))
+                                .ToList()
+                        ))
                         .ToList()
                 ))
                 .SingleOrDefaultAsync(ct);
@@ -88,6 +105,51 @@ public static class PublicCoursesEndpoints
                 : Results.Ok(course);
         })
         .WithName("PublicGetCourseDetail");
+
+        // detalle de lección — solo si lección, módulo y curso están publicados
+        group.MapGet("/lessons/{lessonId:guid}", async (
+            [FromRoute] Guid lessonId,
+            AppDbContext db,
+            CancellationToken ct) =>
+        {
+            if (lessonId == Guid.Empty)
+                return Results.BadRequest(new { message = "lessonId inválido." });
+
+            var lesson = await (
+                from l in db.Lessons.AsNoTracking()
+                join m in db.Modules.AsNoTracking() on l.ModuleId equals m.Id
+                join c in db.Courses.AsNoTracking() on m.CourseId equals c.Id
+                where l.Id == lessonId && l.IsPublished && m.IsPublished && c.IsPublished
+                select new
+                {
+                    l.Id,
+                    l.ModuleId,
+                    CourseId = c.Id,
+                    l.Title,
+                    l.Content,
+                    l.VideoUrl
+                })
+                .SingleOrDefaultAsync(ct);
+
+            if (lesson is null)
+                return Results.NotFound(new { message = "Lección no encontrada o no publicada." });
+
+            var embed = VideoEmbedHelper.Resolve(lesson.VideoUrl);
+
+            var dto = new LessonDetailDto(
+                lesson.Id,
+                lesson.ModuleId,
+                lesson.CourseId,
+                lesson.Title,
+                lesson.Content,
+                lesson.VideoUrl,
+                embed?.EmbedUrl,
+                embed?.IsDirect ?? false
+            );
+
+            return Results.Ok(dto);
+        })
+        .WithName("PublicGetLessonDetail");
 
         return app;
     }

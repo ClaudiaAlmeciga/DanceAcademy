@@ -34,6 +34,7 @@ else if (courses is not null)
                     <tr>
                         <th>Título</th>
                         <th>Nivel</th>
+                        <th>Precio</th>
                         <th>Estado</th>
                         <th>Módulos</th>
                         <th>Lecciones</th>
@@ -46,8 +47,9 @@ else if (courses is not null)
                         <tr>
                             <td class="align-middle">@course.Title</td>
                             <td class="align-middle">
-                                <span class="badge @LevelBadgeClass(course.Level)">@TranslateLevel(course.Level)</span>
+                                <span class="badge bg-secondary">@course.LevelName</span>
                             </td>
+                            <td class="align-middle">@PricingLabel(course.PricingType, course.Price)</td>
                             <td class="align-middle">
                                 @if (course.IsPublished)
                                 {
@@ -115,26 +117,19 @@ else if (courses is not null)
     private Guid? confirmingCourseId;
     private string searchTerm = string.Empty;
 
+    private static string PricingLabel(PricingType pricingType, decimal? price) => pricingType switch
+    {
+        PricingType.Free => "Gratis",
+        PricingType.SubscriptionIncluded => "Incluido en suscripción",
+        PricingType.IndividualPurchase => $"${price:N0}",
+        PricingType.Both => $"${price:N0} o suscripción",
+        _ => "-"
+    };
+
     private IEnumerable<AdminCourseListItemDto> FilteredCourses =>
         string.IsNullOrWhiteSpace(searchTerm)
             ? (courses ?? [])
             : (courses ?? []).Where(c => c.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
-
-    private static string TranslateLevel(string level) => level switch
-    {
-        "Beginner"     => "Principiante",
-        "Intermediate" => "Intermedio",
-        "Advanced"     => "Avanzado",
-        _              => level
-    };
-
-    private static string LevelBadgeClass(string level) => level switch
-    {
-        "Beginner"     => "badge-level-beginner",
-        "Intermediate" => "badge-level-intermediate",
-        "Advanced"     => "badge-level-advanced",
-        _              => "bg-secondary"
-    };
 
     protected override async Task OnInitializedAsync()
     {

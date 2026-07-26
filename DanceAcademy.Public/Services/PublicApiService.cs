@@ -1,3 +1,4 @@
+using DanceAcademy.Application.DTOs;
 using DanceAcademy.Application.DTOs.Public;
 using DanceAcademy.Public.Auth;
 using System.Net.Http.Json;
@@ -44,17 +45,44 @@ public class PublicApiService(
     }
 
     public async Task<PagedResult<CourseListItemDto>?> GetCoursesAsync(
-        int page = 1, int pageSize = 12, string? level = null, CancellationToken ct = default)
+        int page = 1, int pageSize = 12, Guid? levelId = null, CancellationToken ct = default)
     {
         var url = $"/public/courses?page={page}&pageSize={pageSize}";
-        if (!string.IsNullOrWhiteSpace(level))
-            url += $"&level={Uri.EscapeDataString(level)}";
+        if (levelId is not null)
+            url += $"&levelId={levelId}";
 
         var response = await Client.GetAsync(url, ct);
         if (!response.IsSuccessStatusCode)
             return null;
 
         return await response.Content.ReadFromJsonAsync<PagedResult<CourseListItemDto>>(cancellationToken: ct);
+    }
+
+    public async Task<List<LevelDto>?> GetLevelsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/public/levels", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<LevelDto>>(cancellationToken: ct);
+    }
+
+    public async Task<CourseDetailDto?> GetCourseDetailAsync(Guid courseId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/public/courses/{courseId}", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<CourseDetailDto>(cancellationToken: ct);
+    }
+
+    public async Task<LessonDetailDto?> GetLessonDetailAsync(Guid lessonId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/public/lessons/{lessonId}", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<LessonDetailDto>(cancellationToken: ct);
     }
 
     public async Task<(bool Success, string? Error)> ForgotPasswordAsync(
@@ -82,6 +110,33 @@ public class PublicApiService(
         }
 
         return (false, "No se pudo restablecer la contraseña. Intenta de nuevo.");
+    }
+
+    public async Task<List<SubscriptionPlanDto>?> GetSubscriptionPlansAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/public/subscription-plans", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<SubscriptionPlanDto>>(cancellationToken: ct);
+    }
+
+    public async Task<MeProfileDto?> GetProfileAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/me", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<MeProfileDto>(cancellationToken: ct);
+    }
+
+    public async Task<(bool Success, string? Error)> UpdateProfileAsync(
+        UpdateProfileRequest request, CancellationToken ct = default)
+    {
+        var response = await Client.PutAsJsonAsync("/me", request, ct);
+        return response.IsSuccessStatusCode
+            ? (true, null)
+            : (false, "No se pudo guardar el perfil. Intenta de nuevo.");
     }
 
     public async Task LogoutAsync()

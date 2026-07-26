@@ -1,3 +1,5 @@
+using DanceAcademy.Domain.Entities;
+
 namespace DanceAcademy.Application.DTOs.Admin;
 
 public sealed record AdminLessonDto(
@@ -21,8 +23,11 @@ public sealed record AdminCourseListItemDto(
     Guid Id,
     string Title,
     string? Description,
-    string Level,
+    Guid LevelId,
+    string LevelName,
     bool IsPublished,
+    PricingType PricingType,
+    decimal? Price,
     int ModuleCount,
     int LessonCount
 );
@@ -31,7 +36,28 @@ public sealed record AdminCourseDetailDto(
     Guid Id,
     string Title,
     string? Description,
-    string Level,
+    Guid LevelId,
+    string LevelName,
     bool IsPublished,
+    PricingType PricingType,
+    decimal? Price,
+    IReadOnlyList<Guid> SubscriptionPlanIds,
     IReadOnlyList<AdminModuleDto> Modules
+);
+
+public sealed record AdminLevelDto(
+    Guid Id,
+    string Name,
+    int Order,
+    bool IsActive,
+    int CourseCount
+);
+
+public sealed record AdminSubscriptionPlanDto(
+    Guid Id,
+    string Name,
+    string? Description,
+    decimal Price,
+    int BillingPeriodDays,
+    bool IsActive
 );

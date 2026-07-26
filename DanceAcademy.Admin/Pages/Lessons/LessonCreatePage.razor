@@ -31,26 +31,30 @@
             <div class="mb-3">
                 <label class="form-label">URL del video</label>
                 <input class="form-control" @bind="model.VideoUrl" placeholder="https://..." />
-                @{ var (embedUrl, isDirect) = ParseVideoUrl(model.VideoUrl); }
-                @if (embedUrl is not null)
+                @{ var embed = VideoEmbedHelper.Resolve(model.VideoUrl); }
+                @if (embed is not null)
                 {
                     <div class="mt-2">
-                        @if (isDirect)
+                        @if (embed.IsDirect)
                         {
                             <video class="w-100 rounded" style="max-height: 280px;" controls preload="metadata">
-                                <source src="@embedUrl" />
+                                <source src="@embed.EmbedUrl" />
                             </video>
                         }
                         else
                         {
                             <div class="ratio ratio-16x9">
-                                <iframe src="@embedUrl"
+                                <iframe src="@embed.EmbedUrl"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowfullscreen
                                         class="rounded border-0"></iframe>
                             </div>
                         }
                     </div>
+                }
+                else if (!string.IsNullOrWhiteSpace(model.VideoUrl))
+                {
+                    <div class="form-text text-warning">No se reconoce como YouTube, Vimeo o video directo (.mp4/.webm/.ogg).</div>
                 }
             </div>
             <div class="mb-3">
@@ -127,48 +131,5 @@
         public int Order { get; set; } = 1;
         public string? VideoUrl { get; set; }
         public string? Content { get; set; }
-    }
-
-    private static (string? embedUrl, bool isDirect) ParseVideoUrl(string? url)
-    {
-        if (string.IsNullOrWhiteSpace(url)) return (null, false);
-
-        if (url.Contains("youtube.com/embed/") || url.Contains("player.vimeo.com/video/"))
-            return (url, false);
-
-        if (url.Contains("youtube.com/watch") && url.Contains("v="))
-        {
-            var vIdx = url.IndexOf("v=", StringComparison.Ordinal) + 2;
-            var videoId = url[vIdx..];
-            var ampIdx = videoId.IndexOf('&');
-            if (ampIdx >= 0) videoId = videoId[..ampIdx];
-            return ($"https://www.youtube.com/embed/{videoId}", false);
-        }
-
-        if (url.Contains("youtu.be/"))
-        {
-            var idx = url.IndexOf("youtu.be/", StringComparison.Ordinal) + "youtu.be/".Length;
-            var videoId = url[idx..];
-            var qIdx = videoId.IndexOf('?');
-            if (qIdx >= 0) videoId = videoId[..qIdx];
-            return ($"https://www.youtube.com/embed/{videoId}", false);
-        }
-
-        if (url.Contains("vimeo.com/"))
-        {
-            var lastSlash = url.TrimEnd('/').LastIndexOf('/');
-            if (lastSlash >= 0)
-            {
-                var videoId = url[(lastSlash + 1)..].Split('?')[0].TrimEnd('/');
-                if (!string.IsNullOrEmpty(videoId) && videoId.All(char.IsDigit))
-                    return ($"https://player.vimeo.com/video/{videoId}", false);
-            }
-        }
-
-        var lower = url.ToLowerInvariant();
-        if (lower.EndsWith(".mp4") || lower.EndsWith(".webm") || lower.EndsWith(".ogg"))
-            return (url, true);
-
-        return (null, false);
     }
 }

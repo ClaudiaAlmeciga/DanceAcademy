@@ -36,16 +36,58 @@ else
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Nivel <span class="text-danger">*</span></label>
-                    <select class="form-select" @bind="model.Level">
-                        <option value="Beginner">Principiante</option>
-                        <option value="Intermediate">Intermedio</option>
-                        <option value="Advanced">Avanzado</option>
+                    <select class="form-select" @bind="model.LevelId">
+                        @if (levels is not null)
+                        {
+                            @foreach (var level in levels)
+                            {
+                                <option value="@level.Id">@level.Name</option>
+                            }
+                        }
                     </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Descripción</label>
                     <textarea class="form-control" rows="3" @bind="model.Description"></textarea>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Tipo de precio <span class="text-danger">*</span></label>
+                    <select class="form-select" @bind="model.PricingType">
+                        <option value="@PricingType.Free">Gratis</option>
+                        <option value="@PricingType.IndividualPurchase">Compra individual</option>
+                        <option value="@PricingType.SubscriptionIncluded">Incluido en suscripción</option>
+                        <option value="@PricingType.Both">Compra individual o suscripción</option>
+                    </select>
+                </div>
+                @if (RequiresPrice(model.PricingType))
+                {
+                    <div class="mb-3">
+                        <label class="form-label">Precio <span class="text-danger">*</span></label>
+                        <input type="number" min="0.01" step="0.01" class="form-control" style="max-width: 200px;" @bind="model.Price" />
+                    </div>
+                }
+                @if (AllowsPlans(model.PricingType) && plans is not null)
+                {
+                    <div class="mb-3">
+                        <label class="form-label">Planes que incluyen este curso</label>
+                        @if (!plans.Any())
+                        {
+                            <div class="text-muted small">No hay planes creados. <a href="/plans/new" target="_blank">Crea uno</a>.</div>
+                        }
+                        else
+                        {
+                            @foreach (var plan in plans)
+                            {
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="plan-@plan.Id"
+                                           checked="@model.SubscriptionPlanIds.Contains(plan.Id)"
+                                           @onchange="e => TogglePlan(plan.Id, (bool)e.Value!)" />
+                                    <label class="form-check-label" for="plan-@plan.Id">@plan.Name</label>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary" disabled="@isSaving">
                         @(isSaving ? "Guardando..." : "Guardar cambios")
@@ -61,6 +103,8 @@ else
     [Parameter] public Guid CourseId { get; set; }
 
     private readonly CourseEditModel model = new();
+    private List<AdminLevelDto>? levels;
+    private List<AdminSubscriptionPlanDto>? plans;
     private string? loadError;
     private string? errorMessage;
     private bool isLoading = true;
@@ -70,6 +114,9 @@ else
     {
         try
         {
+            levels = await AdminApi.GetLevelsAsync();
+            plans = await AdminApi.GetSubscriptionPlansAsync();
+
             var course = await AdminApi.GetCourseDetailAsync(CourseId);
             if (course is null)
             {
@@ -83,7 +130,10 @@ else
             }
             model.Title = course.Title;
             model.Description = course.Description;
-            model.Level = course.Level;
+            model.LevelId = course.LevelId;
+            model.PricingType = course.PricingType;
+            model.Price = course.Price;
+            model.SubscriptionPlanIds = new HashSet<Guid>(course.SubscriptionPlanIds);
         }
         catch
         {
@@ -95,6 +145,12 @@ else
         }
     }
 
+    private void TogglePlan(Guid planId, bool isChecked)
+    {
+        if (isChecked) model.SubscriptionPlanIds.Add(planId);
+        else model.SubscriptionPlanIds.Remove(planId);
+    }
+
     private async Task HandleSubmitAsync()
     {
         if (string.IsNullOrWhiteSpace(model.Title))
@@ -103,10 +159,18 @@ else
             return;
         }
 
+        var price = RequiresPrice(model.PricingType) ? model.Price : null;
+        if (RequiresPrice(model.PricingType) && (price is null || price <= 0))
+        {
+            errorMessage = "El precio debe ser mayor a 0 para este tipo.";
+            return;
+        }
+
         isSaving = true;
         errorMessage = null;
 
-        var request = new UpdateCourseRequest(model.Title.Trim(), model.Description?.Trim(), model.Level);
+        var planIds = AllowsPlans(model.PricingType) ? model.SubscriptionPlanIds.ToList() : new List<Guid>();
+        var request = new UpdateCourseRequest(model.Title.Trim(), model.LevelId, model.Description?.Trim(), model.PricingType, price, planIds);
         var response = await AdminApi.UpdateCourseAsync(CourseId, request);
 
         isSaving = false;
@@ -125,10 +189,19 @@ else
         }
     }
 
+    private static bool RequiresPrice(PricingType pricingType) =>
+        pricingType is PricingType.IndividualPurchase or PricingType.Both;
+
+    private static bool AllowsPlans(PricingType pricingType) =>
+        pricingType is PricingType.SubscriptionIncluded or PricingType.Both;
+
     private sealed class CourseEditModel
     {
         public string Title { get; set; } = string.Empty;
-        public string Level { get; set; } = "Beginner";
+        public Guid LevelId { get; set; }
         public string? Description { get; set; }
+        public PricingType PricingType { get; set; } = PricingType.Free;
+        public decimal? Price { get; set; }
+        public HashSet<Guid> SubscriptionPlanIds { get; set; } = new();
     }
 }

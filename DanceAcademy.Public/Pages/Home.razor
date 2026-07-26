@@ -12,7 +12,11 @@
         </p>
         <div class="d-flex justify-content-center gap-3 mt-4">
             <a href="/cursos" class="btn btn-light btn-lg da-hero-btn">Ver cursos</a>
-            <a href="/register" class="btn btn-outline-light btn-lg da-hero-btn">Registrarse gratis</a>
+            <AuthorizeView>
+                <NotAuthorized>
+                    <a href="/register" class="btn btn-outline-light btn-lg da-hero-btn">Registrarse gratis</a>
+                </NotAuthorized>
+            </AuthorizeView>
         </div>
     </div>
 </section>
@@ -49,8 +53,17 @@
 <!-- CTA final -->
 <section class="da-cta">
     <div class="container text-center">
-        <h2 class="fw-bold mb-3">¿Listo para empezar?</h2>
-        <p class="text-muted mb-4">Únete a nuestra comunidad y comienza tu primer curso hoy.</p>
-        <a href="/register" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+        <AuthorizeView>
+            <Authorized>
+                <h2 class="fw-bold mb-3">Sigue aprendiendo</h2>
+                <p class="text-muted mb-4">Explora el catálogo y continúa con tu próximo curso.</p>
+                <a href="/cursos" class="btn btn-primary btn-lg">Ver cursos</a>
+            </Authorized>
+            <NotAuthorized>
+                <h2 class="fw-bold mb-3">¿Listo para empezar?</h2>
+                <p class="text-muted mb-4">Únete a nuestra comunidad y comienza tu primer curso hoy.</p>
+                <a href="/register" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 </section>

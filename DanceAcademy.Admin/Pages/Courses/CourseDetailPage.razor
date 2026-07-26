@@ -29,7 +29,7 @@ else if (course is not null)
                     {
                         <p class="text-muted mb-2">@course.Description</p>
                     }
-                    <span class="badge @LevelBadgeClass(course.Level) me-2">@TranslateLevel(course.Level)</span>
+                    <span class="badge bg-secondary me-2">@course.LevelName</span>
                     @if (course.IsPublished)
                     {
                         <span class="badge bg-success">Publicado</span>
@@ -46,6 +46,10 @@ else if (course is not null)
                     }
                     @if (course.IsPublished)
                     {
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="HandleUnpublishAndEditCourseAsync"
+                                disabled="@isBusy">
+                            Despublicar y editar
+                        </button>
                         <button class="btn btn-sm btn-outline-warning" @onclick="HandleUnpublishCourseAsync"
                                 disabled="@isBusy">
                             Despublicar
@@ -111,6 +115,11 @@ else if (course is not null)
                         }
                         @if (module.IsPublished)
                         {
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    @onclick="() => HandleUnpublishAndEditModuleAsync(module.Id)"
+                                    disabled="@isBusy">
+                                Despublicar y editar
+                            </button>
                             <button class="btn btn-sm btn-outline-warning"
                                     @onclick="() => HandleUnpublishModuleAsync(module.Id)"
                                     disabled="@isBusy">
@@ -167,6 +176,11 @@ else if (course is not null)
                                         @if (lesson.IsPublished)
                                         {
                                             <span class="badge bg-success">Publicado</span>
+                                            <button class="btn btn-sm btn-outline-secondary py-0"
+                                                    @onclick="() => HandleUnpublishAndEditLessonAsync(module.Id, lesson.Id)"
+                                                    disabled="@isBusy">
+                                                Despublicar y editar
+                                            </button>
                                             <button class="btn btn-sm btn-outline-warning py-0"
                                                     @onclick="() => HandleUnpublishLessonAsync(lesson.Id)"
                                                     disabled="@isBusy">
@@ -265,6 +279,17 @@ else if (course is not null)
         if (response.IsSuccessStatusCode) await LoadCourseAsync();
     }
 
+    private async Task HandleUnpublishAndEditCourseAsync()
+    {
+        isBusy = true;
+        var response = await AdminApi.UnpublishCourseAsync(CourseId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode)
+            Nav.NavigateTo($"/courses/{CourseId}/edit");
+        else
+            errorMessage = "No se pudo despublicar el curso.";
+    }
+
     private async Task HandlePublishModuleAsync(Guid moduleId)
     {
         isBusy = true;
@@ -281,6 +306,17 @@ else if (course is not null)
         if (response.IsSuccessStatusCode) await LoadCourseAsync();
     }
 
+    private async Task HandleUnpublishAndEditModuleAsync(Guid moduleId)
+    {
+        isBusy = true;
+        var response = await AdminApi.UnpublishModuleAsync(moduleId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode)
+            Nav.NavigateTo($"/courses/{CourseId}/modules/{moduleId}/edit");
+        else
+            errorMessage = "No se pudo despublicar el módulo.";
+    }
+
     private async Task HandlePublishLessonAsync(Guid lessonId)
     {
         isBusy = true;
@@ -295,6 +331,17 @@ else if (course is not null)
         var response = await AdminApi.UnpublishLessonAsync(lessonId);
         isBusy = false;
         if (response.IsSuccessStatusCode) await LoadCourseAsync();
+    }
+
+    private async Task HandleUnpublishAndEditLessonAsync(Guid moduleId, Guid lessonId)
+    {
+        isBusy = true;
+        var response = await AdminApi.UnpublishLessonAsync(lessonId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode)
+            Nav.NavigateTo($"/courses/{CourseId}/modules/{moduleId}/lessons/{lessonId}/edit");
+        else
+            errorMessage = "No se pudo despublicar la lección.";
     }
 
     private async Task HandleDeleteCourseAsync()
@@ -333,19 +380,4 @@ else if (course is not null)
             errorMessage = "No se pudo eliminar la lección.";
     }
 
-    private static string TranslateLevel(string level) => level switch
-    {
-        "Beginner"     => "Principiante",
-        "Intermediate" => "Intermedio",
-        "Advanced"     => "Avanzado",
-        _              => level
-    };
-
-    private static string LevelBadgeClass(string level) => level switch
-    {
-        "Beginner"     => "badge-level-beginner",
-        "Intermediate" => "badge-level-intermediate",
-        "Advanced"     => "badge-level-advanced",
-        _              => "bg-secondary"
-    };
 }

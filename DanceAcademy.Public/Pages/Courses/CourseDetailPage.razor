@@ -1,0 +1,105 @@
+@page "/cursos/{CourseId:guid}"
+
+@inject PublicApiService Api
+
+<PageTitle>@(course?.Title ?? "Curso") — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <div class="mb-3">
+        <a href="/cursos" class="text-decoration-none text-muted small">← Volver al catálogo</a>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (course is null)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Curso no encontrado o no disponible.</p>
+        </div>
+    }
+    else
+    {
+        <span class="badge bg-secondary mb-2">@course.LevelName</span>
+        <span class="badge bg-light text-dark border mb-2 ms-1">@PricingLabel(course.PricingType, course.Price)</span>
+        <h2 class="fw-bold mb-2">@course.Title</h2>
+        @if (!string.IsNullOrWhiteSpace(course.Description))
+        {
+            <p class="text-muted mb-4">@course.Description</p>
+        }
+
+        @if (course.SubscriptionPlans.Any())
+        {
+            <p class="text-muted small mb-4">
+                Incluido en: @string.Join(", ", course.SubscriptionPlans.Select(p => p.Name))
+                — <a href="/planes">ver planes</a>
+            </p>
+        }
+
+        @if (!course.Modules.Any())
+        {
+            <p class="text-muted">Este curso todavía no tiene contenido publicado.</p>
+        }
+        else
+        {
+            @foreach (var module in course.Modules)
+            {
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header fw-semibold">
+                        @module.Order. @module.Title
+                    </div>
+                    <div class="card-body py-2">
+                        @if (!module.Lessons.Any())
+                        {
+                            <div class="text-muted small py-2">Sin lecciones publicadas aún.</div>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var lesson in module.Lessons)
+                                {
+                                    <li class="list-group-item px-0">
+                                        <a href="/cursos/@CourseId/lecciones/@lesson.Id" class="text-decoration-none">
+                                            @lesson.Order. @lesson.Title
+                                            @if (!string.IsNullOrWhiteSpace(lesson.VideoUrl))
+                                            {
+                                                <span class="text-muted small ms-1">▶</span>
+                                            }
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public Guid CourseId { get; set; }
+
+    private CourseDetailDto? course;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        course = await Api.GetCourseDetailAsync(CourseId);
+        isLoading = false;
+    }
+
+    private static string PricingLabel(PricingType pricingType, decimal? price) => pricingType switch
+    {
+        PricingType.Free => "Gratis",
+        PricingType.SubscriptionIncluded => "Incluido en suscripción",
+        PricingType.IndividualPurchase => $"${price:N0}",
+        PricingType.Both => $"${price:N0} o suscripción",
+        _ => ""
+    };
+}

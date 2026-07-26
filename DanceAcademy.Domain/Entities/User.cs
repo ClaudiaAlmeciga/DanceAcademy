@@ -13,6 +13,17 @@ public sealed class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string? PasswordResetToken { get; set; }
     public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
+    public string? FullName { get; private set; }
+    public string? Phone { get; private set; }
+    public DateOnly? BirthDate { get; private set; }
+
+    public void UpdateProfile(string? fullName, string? phone, DateOnly? birthDate)
+    {
+        FullName = string.IsNullOrWhiteSpace(fullName) ? null : fullName.Trim();
+        Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
+        BirthDate = birthDate;
+    }
 }
 
 public static class Roles
