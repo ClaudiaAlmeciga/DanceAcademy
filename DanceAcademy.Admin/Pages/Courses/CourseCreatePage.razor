@@ -1,0 +1,91 @@
+@page "/courses/new"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Nuevo curso — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/courses" class="text-decoration-none text-muted small">← Volver a cursos</a>
+</div>
+
+<div class="card shadow-sm" style="max-width: 520px;">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Nuevo curso</h5>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Título <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Title" placeholder="Ej: Salsa Principiantes" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Nivel <span class="text-danger">*</span></label>
+                <select class="form-select" @bind="model.Level">
+                    <option value="Beginner">Principiante</option>
+                    <option value="Intermediate">Intermedio</option>
+                    <option value="Advanced">Avanzado</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea class="form-control" rows="3" @bind="model.Description"
+                          placeholder="Descripción del curso (opcional)"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @(isLoading ? "Guardando..." : "Crear curso")
+                </button>
+                <a href="/courses" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly CourseCreateModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "El título es obligatorio.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var request = new CreateCourseRequest(model.Title.Trim(), model.Description?.Trim(), model.Level);
+        var response = await AdminApi.CreateCourseAsync(request);
+
+        isLoading = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/courses");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            errorMessage = "Ya existe un curso con ese título.";
+        }
+        else
+        {
+            errorMessage = $"Error al crear el curso (HTTP {(int)response.StatusCode}). Intenta de nuevo.";
+        }
+    }
+
+    private sealed class CourseCreateModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Level { get; set; } = "Beginner";
+        public string? Description { get; set; }
+    }
+}

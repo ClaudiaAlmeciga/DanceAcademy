@@ -1,0 +1,174 @@
+@page "/courses/{courseId:guid}/modules/{moduleId:guid}/lessons/new"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Nueva lección — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/courses/@CourseId" class="text-decoration-none text-muted small">← Volver al curso</a>
+</div>
+
+<div class="card shadow-sm" style="max-width: 560px;">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Nueva lección</h5>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Título <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Title" placeholder="Ej: Pasos básicos de salsa" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Orden <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" @bind="model.Order" min="1" style="max-width: 120px;" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">URL del video</label>
+                <input class="form-control" @bind="model.VideoUrl" placeholder="https://..." />
+                @{ var (embedUrl, isDirect) = ParseVideoUrl(model.VideoUrl); }
+                @if (embedUrl is not null)
+                {
+                    <div class="mt-2">
+                        @if (isDirect)
+                        {
+                            <video class="w-100 rounded" style="max-height: 280px;" controls preload="metadata">
+                                <source src="@embedUrl" />
+                            </video>
+                        }
+                        else
+                        {
+                            <div class="ratio ratio-16x9">
+                                <iframe src="@embedUrl"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowfullscreen
+                                        class="rounded border-0"></iframe>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Contenido</label>
+                <textarea class="form-control" rows="5" @bind="model.Content"
+                          placeholder="Descripción o notas de la lección (opcional)"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @(isLoading ? "Guardando..." : "Crear lección")
+                </button>
+                <a href="/courses/@CourseId" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid CourseId { get; set; }
+    [Parameter] public Guid ModuleId { get; set; }
+
+    private readonly LessonCreateModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "El título es obligatorio.";
+            return;
+        }
+        if (model.Order < 1)
+        {
+            errorMessage = "El orden debe ser >= 1.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var request = new CreateLessonRequest(
+            model.Title.Trim(),
+            model.Order,
+            string.IsNullOrWhiteSpace(model.Content) ? null : model.Content.Trim(),
+            string.IsNullOrWhiteSpace(model.VideoUrl) ? null : model.VideoUrl.Trim()
+        );
+
+        var response = await AdminApi.CreateLessonAsync(ModuleId, request);
+
+        isLoading = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo($"/courses/{CourseId}");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            errorMessage = $"Ya existe una lección con orden {model.Order} en este módulo.";
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            errorMessage = "Módulo no encontrado.";
+        }
+        else
+        {
+            errorMessage = "Error al crear la lección. Intenta de nuevo.";
+        }
+    }
+
+    private sealed class LessonCreateModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public int Order { get; set; } = 1;
+        public string? VideoUrl { get; set; }
+        public string? Content { get; set; }
+    }
+
+    private static (string? embedUrl, bool isDirect) ParseVideoUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return (null, false);
+
+        if (url.Contains("youtube.com/embed/") || url.Contains("player.vimeo.com/video/"))
+            return (url, false);
+
+        if (url.Contains("youtube.com/watch") && url.Contains("v="))
+        {
+            var vIdx = url.IndexOf("v=", StringComparison.Ordinal) + 2;
+            var videoId = url[vIdx..];
+            var ampIdx = videoId.IndexOf('&');
+            if (ampIdx >= 0) videoId = videoId[..ampIdx];
+            return ($"https://www.youtube.com/embed/{videoId}", false);
+        }
+
+        if (url.Contains("youtu.be/"))
+        {
+            var idx = url.IndexOf("youtu.be/", StringComparison.Ordinal) + "youtu.be/".Length;
+            var videoId = url[idx..];
+            var qIdx = videoId.IndexOf('?');
+            if (qIdx >= 0) videoId = videoId[..qIdx];
+            return ($"https://www.youtube.com/embed/{videoId}", false);
+        }
+
+        if (url.Contains("vimeo.com/"))
+        {
+            var lastSlash = url.TrimEnd('/').LastIndexOf('/');
+            if (lastSlash >= 0)
+            {
+                var videoId = url[(lastSlash + 1)..].Split('?')[0].TrimEnd('/');
+                if (!string.IsNullOrEmpty(videoId) && videoId.All(char.IsDigit))
+                    return ($"https://player.vimeo.com/video/{videoId}", false);
+            }
+        }
+
+        var lower = url.ToLowerInvariant();
+        if (lower.EndsWith(".mp4") || lower.EndsWith(".webm") || lower.EndsWith(".ogg"))
+            return (url, true);
+
+        return (null, false);
+    }
+}

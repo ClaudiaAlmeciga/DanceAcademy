@@ -20,6 +20,11 @@ public sealed class CourseConfiguration : IEntityTypeConfiguration<Course>
         b.Property(x => x.Description)
             .HasMaxLength(2000);
 
+        b.Property(x => x.Level)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
         b.Property(x => x.IsPublished).IsRequired();
 
         b.Property(x => x.CreatedAt).IsRequired();

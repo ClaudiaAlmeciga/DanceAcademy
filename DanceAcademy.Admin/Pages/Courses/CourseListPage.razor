@@ -1,0 +1,167 @@
+@page "/courses"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Cursos — Dance Academy Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Cursos</h4>
+    <a class="btn btn-primary btn-sm" href="/courses/new">+ Nuevo curso</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (courses is not null)
+{
+    <div class="mb-3">
+        <input class="form-control" style="max-width: 320px;"
+               placeholder="Buscar por título..."
+               @bind="searchTerm" @bind:event="oninput" />
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Título</th>
+                        <th>Nivel</th>
+                        <th>Estado</th>
+                        <th>Módulos</th>
+                        <th>Lecciones</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var course in FilteredCourses)
+                    {
+                        <tr>
+                            <td class="align-middle">@course.Title</td>
+                            <td class="align-middle">
+                                <span class="badge @LevelBadgeClass(course.Level)">@TranslateLevel(course.Level)</span>
+                            </td>
+                            <td class="align-middle">
+                                @if (course.IsPublished)
+                                {
+                                    <span class="badge bg-success">Publicado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Borrador</span>
+                                }
+                            </td>
+                            <td class="align-middle">@course.ModuleCount</td>
+                            <td class="align-middle">@course.LessonCount</td>
+                            <td class="align-middle text-end">
+                                @if (confirmingCourseId == course.Id)
+                                {
+                                    <span class="small text-danger me-2">¿Eliminar?</span>
+                                    <button class="btn btn-sm btn-danger me-1"
+                                            @onclick="() => HandleDeleteCourseAsync(course.Id)"
+                                            disabled="@isDeleting">
+                                        Sí
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                            @onclick="() => confirmingCourseId = null">
+                                        No
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-sm btn-outline-primary me-1" href="/courses/@course.Id">
+                                        Ver
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => confirmingCourseId = course.Id"
+                                            disabled="@isDeleting">
+                                        Eliminar
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!FilteredCourses.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                @if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    <span>No hay cursos. <a href="/courses/new">Crea el primero.</a></span>
+                }
+                else
+                {
+                    <span>Sin resultados para "<strong>@searchTerm</strong>".</span>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<AdminCourseListItemDto>? courses;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isDeleting;
+    private Guid? confirmingCourseId;
+    private string searchTerm = string.Empty;
+
+    private IEnumerable<AdminCourseListItemDto> FilteredCourses =>
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? (courses ?? [])
+            : (courses ?? []).Where(c => c.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private static string TranslateLevel(string level) => level switch
+    {
+        "Beginner"     => "Principiante",
+        "Intermediate" => "Intermedio",
+        "Advanced"     => "Avanzado",
+        _              => level
+    };
+
+    private static string LevelBadgeClass(string level) => level switch
+    {
+        "Beginner"     => "badge-level-beginner",
+        "Intermediate" => "badge-level-intermediate",
+        "Advanced"     => "badge-level-advanced",
+        _              => "bg-secondary"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            courses = await AdminApi.GetCoursesAsync();
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de cursos.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleDeleteCourseAsync(Guid courseId)
+    {
+        isDeleting = true;
+        confirmingCourseId = null;
+        var response = await AdminApi.DeleteCourseAsync(courseId);
+        isDeleting = false;
+
+        if (response.IsSuccessStatusCode)
+            courses = courses?.Where(c => c.Id != courseId).ToList();
+        else
+            errorMessage = "No se pudo eliminar el curso.";
+    }
+}

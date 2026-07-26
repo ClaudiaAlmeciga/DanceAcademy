@@ -1,0 +1,137 @@
+@page "/cursos"
+
+@inject PublicApiService Api
+
+<PageTitle>Cursos — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-4">Catálogo de cursos</h2>
+
+    <div class="da-filter-bar mb-4">
+        @foreach (var filter in LevelFilters)
+        {
+            var filterValue = filter.Value;
+            <button class="btn @(selectedLevel == filterValue ? "btn-primary" : "btn-outline-secondary") btn-sm"
+                    @onclick="() => SelectLevelAsync(filterValue)">
+                @filter.Label
+            </button>
+        }
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (pagedResult is null || pagedResult.Items.Count == 0)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">No hay cursos disponibles en este momento.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var course in pagedResult.Items)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="da-course-card">
+                        <div class="da-course-card-body">
+                            <span class="badge @LevelBadgeClass(course.Level) mb-2">@TranslateLevel(course.Level)</span>
+                            <h5 class="da-course-title">@course.Title</h5>
+                            @if (!string.IsNullOrWhiteSpace(course.Description))
+                            {
+                                <p class="da-course-description text-muted">@course.Description</p>
+                            }
+                        </div>
+                        <div class="da-course-card-footer">
+                            <a href="/cursos/@course.Id" class="btn btn-primary btn-sm w-100">Ver curso →</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (TotalPages > 1)
+        {
+            <nav class="da-pagination mt-5 d-flex justify-content-center align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm"
+                        disabled="@(currentPage == 1)"
+                        @onclick="() => GoToPageAsync(currentPage - 1)">← Anterior</button>
+
+                @for (int n = 1; n <= TotalPages; n++)
+                {
+                    var pageNumber = n;
+                    <button class="btn btn-sm @(pageNumber == currentPage ? "btn-primary" : "btn-outline-secondary")"
+                            @onclick="() => GoToPageAsync(pageNumber)">@pageNumber</button>
+                }
+
+                <button class="btn btn-outline-secondary btn-sm"
+                        disabled="@(currentPage == TotalPages)"
+                        @onclick="() => GoToPageAsync(currentPage + 1)">Siguiente →</button>
+            </nav>
+        }
+    }
+</div>
+
+@code {
+    private PagedResult<CourseListItemDto>? pagedResult;
+    private bool isLoading = true;
+    private int currentPage = 1;
+    private string? selectedLevel;
+    private const int PageSize = 12;
+
+    private int TotalPages => pagedResult is null
+        ? 1
+        : (int)Math.Ceiling(pagedResult.Total / (double)PageSize);
+
+    private static readonly (string Label, string? Value)[] LevelFilters =
+    [
+        ("Todos",        null),
+        ("Principiante", "Beginner"),
+        ("Intermedio",   "Intermediate"),
+        ("Avanzado",     "Advanced"),
+    ];
+
+    protected override async Task OnInitializedAsync() =>
+        await LoadCoursesAsync();
+
+    private async Task SelectLevelAsync(string? level)
+    {
+        selectedLevel = level;
+        currentPage = 1;
+        await LoadCoursesAsync();
+    }
+
+    private async Task GoToPageAsync(int page)
+    {
+        currentPage = page;
+        await LoadCoursesAsync();
+    }
+
+    private async Task LoadCoursesAsync()
+    {
+        isLoading = true;
+        pagedResult = await Api.GetCoursesAsync(currentPage, PageSize, selectedLevel);
+        isLoading = false;
+    }
+
+    private static string LevelBadgeClass(string level) => level switch
+    {
+        "Beginner"     => "badge-level-beginner",
+        "Intermediate" => "badge-level-intermediate",
+        "Advanced"     => "badge-level-advanced",
+        _              => "bg-secondary"
+    };
+
+    private static string TranslateLevel(string level) => level switch
+    {
+        "Beginner"     => "Principiante",
+        "Intermediate" => "Intermedio",
+        "Advanced"     => "Avanzado",
+        _              => level
+    };
+}

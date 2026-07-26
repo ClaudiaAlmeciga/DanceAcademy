@@ -1,0 +1,134 @@
+@page "/courses/{courseId:guid}/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Editar curso — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/courses/@CourseId" class="text-decoration-none text-muted small">← Volver al curso</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <div class="card shadow-sm" style="max-width: 520px;">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Editar curso</h5>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label">Título <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Title" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nivel <span class="text-danger">*</span></label>
+                    <select class="form-select" @bind="model.Level">
+                        <option value="Beginner">Principiante</option>
+                        <option value="Intermediate">Intermedio</option>
+                        <option value="Advanced">Avanzado</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea class="form-control" rows="3" @bind="model.Description"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                    <a href="/courses/@CourseId" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid CourseId { get; set; }
+
+    private readonly CourseEditModel model = new();
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var course = await AdminApi.GetCourseDetailAsync(CourseId);
+            if (course is null)
+            {
+                loadError = "Curso no encontrado.";
+                return;
+            }
+            if (course.IsPublished)
+            {
+                Nav.NavigateTo($"/courses/{CourseId}", replace: true);
+                return;
+            }
+            model.Title = course.Title;
+            model.Description = course.Description;
+            model.Level = course.Level;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar el curso.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "El título es obligatorio.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var request = new UpdateCourseRequest(model.Title.Trim(), model.Description?.Trim(), model.Level);
+        var response = await AdminApi.UpdateCourseAsync(CourseId, request);
+
+        isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo($"/courses/{CourseId}");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            errorMessage = "Ya existe otro curso con ese título.";
+        }
+        else
+        {
+            errorMessage = $"Error al guardar (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private sealed class CourseEditModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Level { get; set; } = "Beginner";
+        public string? Description { get; set; }
+    }
+}

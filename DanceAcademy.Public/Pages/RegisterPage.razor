@@ -1,0 +1,141 @@
+@page "/register"
+@layout AuthLayout
+
+@inject PublicApiService Api
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
+
+<PageTitle>Crear cuenta — Dance Academy</PageTitle>
+
+<div class="da-auth-card">
+    <div class="text-center mb-4">
+        <img src="logo.svg" width="52" height="52" alt="Dance Academy" class="mb-3" />
+        <h5 class="fw-bold mb-1">Crea tu cuenta</h5>
+        <p class="text-muted small mb-0">Es gratis, siempre lo será</p>
+    </div>
+
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-danger py-2 small">@errorMessage</div>
+    }
+
+    <EditForm Model="@model" OnValidSubmit="HandleRegisterAsync">
+        <div class="mb-3">
+            <label class="form-label fw-medium small">Email</label>
+            <input type="email" class="form-control" @bind="model.Email"
+                   autocomplete="email" placeholder="tu@email.com" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-medium small">Contraseña</label>
+            <div class="input-group">
+                <input type="@(showPassword ? "text" : "password")" class="form-control" @bind="model.Password"
+                       autocomplete="new-password" placeholder="Mínimo 8 caracteres" />
+                <button type="button" class="da-password-toggle" @onclick="() => showPassword = !showPassword"
+                        aria-label="@(showPassword ? "Ocultar contraseña" : "Mostrar contraseña")">
+                    @if (showPassword)
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                            <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                            <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                        </svg>
+                    }
+                </button>
+            </div>
+        </div>
+        <div class="mb-4">
+            <label class="form-label fw-medium small">Confirmar contraseña</label>
+            <div class="input-group">
+                <input type="@(showConfirmPassword ? "text" : "password")" class="form-control" @bind="model.ConfirmPassword"
+                       autocomplete="new-password" placeholder="••••••••" />
+                <button type="button" class="da-password-toggle" @onclick="() => showConfirmPassword = !showConfirmPassword"
+                        aria-label="@(showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña")">
+                    @if (showConfirmPassword)
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                            <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                            <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                        </svg>
+                    }
+                </button>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" disabled="@isLoading">
+            @(isLoading ? "Creando cuenta..." : "Crear cuenta")
+        </button>
+    </EditForm>
+
+    <p class="text-center text-muted small mt-4 mb-0">
+        ¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
+    </p>
+</div>
+
+@code {
+    private readonly RegisterModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+    private bool showPassword;
+    private bool showConfirmPassword;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true)
+            Nav.NavigateTo("/", replace: true);
+    }
+
+    private async Task HandleRegisterAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+        {
+            errorMessage = "Completa todos los campos.";
+            return;
+        }
+
+        if (model.Password != model.ConfirmPassword)
+        {
+            errorMessage = "Las contraseñas no coinciden.";
+            return;
+        }
+
+        if (model.Password.Length < 8)
+        {
+            errorMessage = "La contraseña debe tener al menos 8 caracteres.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var (success, error) = await Api.RegisterAsync(model.Email, model.Password);
+
+        isLoading = false;
+
+        if (success)
+            Nav.NavigateTo("/", replace: true);
+        else
+            errorMessage = error;
+    }
+
+    private sealed class RegisterModel
+    {
+        public string Email           { get; set; } = string.Empty;
+        public string Password        { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

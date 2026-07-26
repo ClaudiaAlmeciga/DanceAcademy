@@ -11,6 +11,8 @@ public sealed class User
     public string Role { get; set; } = Roles.Student;
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiresAt { get; set; }
 }
 
 public static class Roles

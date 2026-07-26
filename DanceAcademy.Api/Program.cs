@@ -1,5 +1,4 @@
 #nullable enable
-using System.Text;
 using DanceAcademy.Api.Endpoints;
 using DanceAcademy.Infrastructure;
 using DanceAcademy.Infrastructure.Data;
@@ -7,8 +6,21 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// CORS â€” permite que los clientes Blazor WASM consuman la API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WebClients", policy =>
+        policy.WithOrigins(
+                  "http://localhost:5241",  "https://localhost:7282",  // Admin
+                  "http://localhost:5182",  "https://localhost:7284"   // Public
+              )
+              .AllowAnyMethod()
+              .AllowAnyHeader());
+});
 
 // DB
 var cs = builder.Configuration.GetConnectionString("Default");
@@ -25,7 +37,7 @@ builder.Services.AddInfrastructure();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    // Definición de seguridad: Bearer JWT
+    // Definiciï¿½n de seguridad: Bearer JWT
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -33,10 +45,10 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Ingrese el token así: Bearer {token}"
+        Description = "Ingrese el token asï¿½: Bearer {token}"
     });
 
-    // Requisito global (para que Swagger muestre el candado y el botón Authorize)
+    // Requisito global (para que Swagger muestre el candado y el botï¿½n Authorize)
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -83,14 +95,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("WebClients");
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Endpoints
 app.MapAuthEndpoints();
-app.MapMeAndAdmin();
-app.MapCoursesEndpoints();
+app.MapMeEndpoints();
+app.MapAdminEndpoints();
 app.MapAdminCoursesEndpoints();
+app.MapPublicCoursesEndpoints();
 
 // Seed Admin
 await app.SeedAdminAsync();

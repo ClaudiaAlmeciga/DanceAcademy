@@ -1,14 +1,16 @@
 ﻿#nullable enable
-using System.Reflection;
-
 namespace DanceAcademy.Domain.Entities;
 
 public sealed class Course
 {
-    // EF Core requiere constructor sin parámetros (private/protected funciona)
+    // EF Core requiere constructor sin parámetros 
     private Course() { }
 
-    public Course(string title, string? description = null, bool isPublished = false)
+    public Course(
+        string title,
+        string? description = null,
+        CourseLevel level = CourseLevel.Beginner,
+        bool isPublished = false)
     {
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("El título del curso es obligatorio.", nameof(title));
@@ -16,6 +18,7 @@ public sealed class Course
         Id = Guid.NewGuid();
         Title = title.Trim();
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        Level = level;
         IsPublished = isPublished;
         CreatedAt = DateTimeOffset.UtcNow;
     }
@@ -23,6 +26,7 @@ public sealed class Course
     public Guid Id { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
+    public CourseLevel Level { get; private set; } = CourseLevel.Beginner;
     public bool IsPublished { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? UpdatedAt { get; private set; }
@@ -40,6 +44,12 @@ public sealed class Course
     public void Unpublish()
     {
         IsPublished = false;
+        Touch();
+    }
+
+    public void SetLevel(CourseLevel level)
+    {
+        Level = level;
         Touch();
     }
 
@@ -67,4 +77,5 @@ public sealed class Course
     }
 
     private void Touch() => UpdatedAt = DateTimeOffset.UtcNow;
+
 }

@@ -1,0 +1,351 @@
+@page "/courses/{courseId:guid}"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Detalle de curso — Dance Academy Admin</PageTitle>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (course is not null)
+{
+    <div class="mb-3">
+        <a href="/courses" class="text-decoration-none text-muted small">← Volver a cursos</a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h4 class="mb-1">@course.Title</h4>
+                    @if (!string.IsNullOrWhiteSpace(course.Description))
+                    {
+                        <p class="text-muted mb-2">@course.Description</p>
+                    }
+                    <span class="badge @LevelBadgeClass(course.Level) me-2">@TranslateLevel(course.Level)</span>
+                    @if (course.IsPublished)
+                    {
+                        <span class="badge bg-success">Publicado</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Borrador</span>
+                    }
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    @if (!course.IsPublished)
+                    {
+                        <a href="/courses/@CourseId/edit" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    }
+                    @if (course.IsPublished)
+                    {
+                        <button class="btn btn-sm btn-outline-warning" @onclick="HandleUnpublishCourseAsync"
+                                disabled="@isBusy">
+                            Despublicar
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-success" @onclick="HandlePublishCourseAsync"
+                                disabled="@isBusy">
+                            Publicar
+                        </button>
+                    }
+                    @if (confirmingCourseDelete)
+                    {
+                        <span class="small text-danger">¿Eliminar curso y todo su contenido?</span>
+                        <button class="btn btn-sm btn-danger" @onclick="HandleDeleteCourseAsync" disabled="@isBusy">Sí</button>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => confirmingCourseDelete = false">No</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => confirmingCourseDelete = true" disabled="@isBusy">
+                            Eliminar
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Módulos</h5>
+        <a class="btn btn-sm btn-outline-primary" href="/courses/@CourseId/modules/new">
+            + Agregar módulo
+        </a>
+    </div>
+
+    @if (!course.Modules.Any())
+    {
+        <div class="text-muted small">Este curso no tiene módulos aún.</div>
+    }
+    else
+    {
+        @foreach (var module in course.Modules)
+        {
+            <div class="card shadow-sm mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center py-2">
+                    <div>
+                        <span class="fw-semibold me-2">@module.Order. @module.Title</span>
+                        @if (module.IsPublished)
+                        {
+                            <span class="badge bg-success">Publicado</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">Borrador</span>
+                        }
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        @if (!module.IsPublished)
+                        {
+                            <a href="/courses/@CourseId/modules/@module.Id/edit"
+                               class="btn btn-sm btn-outline-secondary">Editar</a>
+                        }
+                        @if (module.IsPublished)
+                        {
+                            <button class="btn btn-sm btn-outline-warning"
+                                    @onclick="() => HandleUnpublishModuleAsync(module.Id)"
+                                    disabled="@isBusy">
+                                Despublicar
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-outline-success"
+                                    @onclick="() => HandlePublishModuleAsync(module.Id)"
+                                    disabled="@isBusy">
+                                Publicar
+                            </button>
+                        }
+                        @if (confirmingModuleId == module.Id)
+                        {
+                            <span class="small text-danger">¿Eliminar?</span>
+                            <button class="btn btn-sm btn-danger"
+                                    @onclick="() => HandleDeleteModuleAsync(module.Id)"
+                                    disabled="@isBusy">Sí</button>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    @onclick="() => confirmingModuleId = null">No</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-outline-danger"
+                                    @onclick="() => confirmingModuleId = module.Id"
+                                    disabled="@isBusy">
+                                Eliminar
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="card-body py-2">
+                    @if (!module.Lessons.Any())
+                    {
+                        <div class="text-muted small mb-2">Sin lecciones aún.</div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush mb-2">
+                            @foreach (var lesson in module.Lessons)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
+                                    <span class="small">
+                                        @lesson.Order. @lesson.Title
+                                        @if (!string.IsNullOrWhiteSpace(lesson.VideoUrl))
+                                        {
+                                            <a href="@lesson.VideoUrl" target="_blank"
+                                               class="ms-2 text-muted small" title="Ver video">▶</a>
+                                        }
+                                    </span>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        @if (lesson.IsPublished)
+                                        {
+                                            <span class="badge bg-success">Publicado</span>
+                                            <button class="btn btn-sm btn-outline-warning py-0"
+                                                    @onclick="() => HandleUnpublishLessonAsync(lesson.Id)"
+                                                    disabled="@isBusy">
+                                                Despublicar
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Borrador</span>
+                                            <a href="/courses/@CourseId/modules/@module.Id/lessons/@lesson.Id/edit"
+                                               class="btn btn-sm btn-outline-secondary py-0">Editar</a>
+                                            <button class="btn btn-sm btn-outline-success py-0"
+                                                    @onclick="() => HandlePublishLessonAsync(lesson.Id)"
+                                                    disabled="@isBusy">
+                                                Publicar
+                                            </button>
+                                        }
+                                        @if (confirmingLessonId == lesson.Id)
+                                        {
+                                            <span class="small text-danger">¿Eliminar?</span>
+                                            <button class="btn btn-sm btn-danger py-0"
+                                                    @onclick="() => HandleDeleteLessonAsync(lesson.Id)"
+                                                    disabled="@isBusy">Sí</button>
+                                            <button class="btn btn-sm btn-outline-secondary py-0"
+                                                    @onclick="() => confirmingLessonId = null">No</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger py-0"
+                                                    @onclick="() => confirmingLessonId = lesson.Id"
+                                                    disabled="@isBusy">
+                                                Eliminar
+                                            </button>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="/courses/@CourseId/modules/@module.Id/lessons/new">
+                        + Lección
+                    </a>
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public Guid CourseId { get; set; }
+
+    private AdminCourseDetailDto? course;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isBusy;
+    private bool confirmingCourseDelete;
+    private Guid? confirmingModuleId;
+    private Guid? confirmingLessonId;
+
+    protected override async Task OnInitializedAsync() =>
+        await LoadCourseAsync();
+
+    private async Task LoadCourseAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            course = await AdminApi.GetCourseDetailAsync(CourseId);
+            if (course is null) errorMessage = "Curso no encontrado.";
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar el curso.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandlePublishCourseAsync()
+    {
+        isBusy = true;
+        var response = await AdminApi.PublishCourseAsync(CourseId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode) await LoadCourseAsync();
+    }
+
+    private async Task HandleUnpublishCourseAsync()
+    {
+        isBusy = true;
+        var response = await AdminApi.UnpublishCourseAsync(CourseId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode) await LoadCourseAsync();
+    }
+
+    private async Task HandlePublishModuleAsync(Guid moduleId)
+    {
+        isBusy = true;
+        var response = await AdminApi.PublishModuleAsync(moduleId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode) await LoadCourseAsync();
+    }
+
+    private async Task HandleUnpublishModuleAsync(Guid moduleId)
+    {
+        isBusy = true;
+        var response = await AdminApi.UnpublishModuleAsync(moduleId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode) await LoadCourseAsync();
+    }
+
+    private async Task HandlePublishLessonAsync(Guid lessonId)
+    {
+        isBusy = true;
+        var response = await AdminApi.PublishLessonAsync(lessonId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode) await LoadCourseAsync();
+    }
+
+    private async Task HandleUnpublishLessonAsync(Guid lessonId)
+    {
+        isBusy = true;
+        var response = await AdminApi.UnpublishLessonAsync(lessonId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode) await LoadCourseAsync();
+    }
+
+    private async Task HandleDeleteCourseAsync()
+    {
+        isBusy = true;
+        confirmingCourseDelete = false;
+        var response = await AdminApi.DeleteCourseAsync(CourseId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode)
+            Nav.NavigateTo("/courses");
+        else
+            errorMessage = "No se pudo eliminar el curso.";
+    }
+
+    private async Task HandleDeleteModuleAsync(Guid moduleId)
+    {
+        isBusy = true;
+        confirmingModuleId = null;
+        var response = await AdminApi.DeleteModuleAsync(moduleId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode)
+            await LoadCourseAsync();
+        else
+            errorMessage = "No se pudo eliminar el módulo.";
+    }
+
+    private async Task HandleDeleteLessonAsync(Guid lessonId)
+    {
+        isBusy = true;
+        confirmingLessonId = null;
+        var response = await AdminApi.DeleteLessonAsync(lessonId);
+        isBusy = false;
+        if (response.IsSuccessStatusCode)
+            await LoadCourseAsync();
+        else
+            errorMessage = "No se pudo eliminar la lección.";
+    }
+
+    private static string TranslateLevel(string level) => level switch
+    {
+        "Beginner"     => "Principiante",
+        "Intermediate" => "Intermedio",
+        "Advanced"     => "Avanzado",
+        _              => level
+    };
+
+    private static string LevelBadgeClass(string level) => level switch
+    {
+        "Beginner"     => "badge-level-beginner",
+        "Intermediate" => "badge-level-intermediate",
+        "Advanced"     => "badge-level-advanced",
+        _              => "bg-secondary"
+    };
+}

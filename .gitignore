@@ -23,3 +23,10 @@ Thumbs.db
 # Secrets (no subir credenciales)
 **/appsettings.*.json
 !**/appsettings.json
+
+#docs
+/docs/
+
+#claude
+.claude
+claude.md
