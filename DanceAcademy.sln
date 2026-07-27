@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanceAcademy.Admin", "Dance
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanceAcademy.Public", "DanceAcademy.Public\DanceAcademy.Public.csproj", "{14109C99-48EE-4097-AAF2-BDFE98CAC905}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DanceAcademy.Tests", "DanceAcademy.Tests\DanceAcademy.Tests.csproj", "{22879568-124C-405C-8268-C02202D9DCFC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -103,6 +105,18 @@ Global
 		{14109C99-48EE-4097-AAF2-BDFE98CAC905}.Release|x64.Build.0 = Release|Any CPU
 		{14109C99-48EE-4097-AAF2-BDFE98CAC905}.Release|x86.ActiveCfg = Release|Any CPU
 		{14109C99-48EE-4097-AAF2-BDFE98CAC905}.Release|x86.Build.0 = Release|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Debug|x64.Build.0 = Debug|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Debug|x86.Build.0 = Debug|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Release|x64.ActiveCfg = Release|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Release|x64.Build.0 = Release|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Release|x86.ActiveCfg = Release|Any CPU
+		{22879568-124C-405C-8268-C02202D9DCFC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
