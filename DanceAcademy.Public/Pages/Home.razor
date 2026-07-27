@@ -1,0 +1,129 @@
+@page "/"
+
+@inject PublicApiService Api
+
+<PageTitle>Dance Academy — Aprende a bailar</PageTitle>
+
+<!-- Hero -->
+<section class="da-hero">
+    <div class="container text-center">
+        <h1 class="da-hero-title">Descubre el arte del baile</h1>
+        <p class="da-hero-subtitle">
+            Aprende desde cero con instructores expertos.<br />
+            Cursos estructurados para todos los niveles.
+        </p>
+        <div class="d-flex justify-content-center gap-3 mt-4">
+            <a href="/cursos" class="btn btn-light btn-lg da-hero-btn">Ver cursos</a>
+            <AuthorizeView>
+                <NotAuthorized>
+                    <a href="/register" class="btn btn-outline-light btn-lg da-hero-btn">Registrarse gratis</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</section>
+
+<!-- Características -->
+<section class="da-features">
+    <div class="container">
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="da-feature-card text-center">
+                    <div class="da-feature-icon">♪</div>
+                    <h5>Cursos estructurados</h5>
+                    <p class="text-muted">Módulos y lecciones organizados para que avances paso a paso.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="da-feature-card text-center">
+                    <div class="da-feature-icon">★</div>
+                    <h5>Todos los niveles</h5>
+                    <p class="text-muted">Desde principiante hasta avanzado. Empieza donde estés.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="da-feature-card text-center">
+                    <div class="da-feature-icon">▶</div>
+                    <h5>A tu ritmo</h5>
+                    <p class="text-muted">Aprende cuando quieras, desde cualquier dispositivo.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA final -->
+<section class="da-cta">
+    <div class="container text-center">
+        <AuthorizeView>
+            <Authorized>
+                <h2 class="fw-bold mb-3">Sigue aprendiendo</h2>
+
+                @if (dashboard is null || dashboard.EnrolledCoursesCount == 0)
+                {
+                    <p class="text-muted mb-4">Explora el catálogo y comienza tu primer curso.</p>
+                    <a href="/cursos" class="btn btn-primary btn-lg">Ver cursos</a>
+                }
+                else
+                {
+                    <div class="row justify-content-center g-3 mb-4">
+                        <div class="col-auto">
+                            <div class="da-feature-card text-center px-4">
+                                <div class="fs-3 fw-bold">@dashboard.EnrolledCoursesCount</div>
+                                <div class="text-muted small">Cursos inscritos</div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="da-feature-card text-center px-4">
+                                <div class="fs-3 fw-bold">@dashboard.OverallProgressPercentage.ToString("0.#")%</div>
+                                <div class="text-muted small">Avance general</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mx-auto mb-4" style="max-width: 480px;">
+                        @foreach (var course in dashboard.Courses)
+                        {
+                            <div class="text-start mb-3">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <a href="/cursos/@course.CourseId" class="text-decoration-none">@course.CourseTitle</a>
+                                    <span class="text-muted">@course.CompletedLessons/@course.TotalLessons</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-success" role="progressbar"
+                                         style="width: @(course.ProgressPercentage.ToString(System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <a href="/cursos" class="btn btn-primary btn-lg">Ver más cursos</a>
+                }
+            </Authorized>
+            <NotAuthorized>
+                <h2 class="fw-bold mb-3">¿Listo para empezar?</h2>
+                <p class="text-muted mb-4">Únete a nuestra comunidad y comienza tu primer curso hoy.</p>
+                <a href="/register" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+</section>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private MyDashboardDto? dashboard;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var isAuthenticated = false;
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+        }
+
+        if (isAuthenticated)
+            dashboard = await Api.GetMyDashboardAsync();
+    }
+}

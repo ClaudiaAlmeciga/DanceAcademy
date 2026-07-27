@@ -1,0 +1,81 @@
+@page "/levels/new"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Nuevo nivel — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/levels" class="text-decoration-none text-muted small">← Volver a niveles</a>
+</div>
+
+<div class="card shadow-sm" style="max-width: 420px;">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Nuevo nivel</h5>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Name" placeholder="Ej: Principiante" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Orden <span class="text-danger">*</span></label>
+                <input type="number" min="1" class="form-control" @bind="model.Order" />
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @(isLoading ? "Guardando..." : "Crear nivel")
+                </button>
+                <a href="/levels" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly LevelCreateModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Name))
+        {
+            errorMessage = "El nombre es obligatorio.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var request = new CreateLevelRequest(model.Name.Trim(), model.Order);
+        var response = await AdminApi.CreateLevelAsync(request);
+
+        isLoading = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/levels");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            errorMessage = "Ya existe un nivel con ese nombre.";
+        }
+        else
+        {
+            errorMessage = $"Error al crear el nivel (HTTP {(int)response.StatusCode}). Intenta de nuevo.";
+        }
+    }
+
+    private sealed class LevelCreateModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Order { get; set; } = 1;
+    }
+}

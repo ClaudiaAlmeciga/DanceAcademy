@@ -1,13 +1,26 @@
 #nullable enable
-using System.Text;
 using DanceAcademy.Api.Endpoints;
 using DanceAcademy.Infrastructure;
 using DanceAcademy.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// CORS — permite que los clientes Blazor WASM consuman la API
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("WebClients", policy =>
+        policy.WithOrigins(
+                  "http://localhost:5241",  "https://localhost:7282",  // Admin
+                  "http://localhost:5182",  "https://localhost:7284"   // Public
+              )
+              .AllowAnyMethod()
+              .AllowAnyHeader());
+});
 
 // DB
 var cs = builder.Configuration.GetConnectionString("Default");
@@ -22,7 +35,36 @@ builder.Services.AddInfrastructure();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Definici�n de seguridad: Bearer JWT
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingrese el token as�: Bearer {token}"
+    });
+
+    // Requisito global (para que Swagger muestre el candado y el bot�n Authorize)
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 
 // JWT
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -53,12 +95,24 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("WebClients");
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Endpoints
 app.MapAuthEndpoints();
-app.MapMeAndAdmin();
+app.MapMeEndpoints();
+app.MapAdminEndpoints();
+app.MapAdminCoursesEndpoints();
+app.MapPublicCoursesEndpoints();
+app.MapAdminLevelsEndpoints();
+app.MapPublicLevelsEndpoints();
+app.MapAdminSubscriptionPlansEndpoints();
+app.MapPublicSubscriptionPlansEndpoints();
+app.MapMeEnrollmentsEndpoints();
+app.MapMeProgressEndpoints();
+app.MapAdminDashboardEndpoints();
+app.MapMeDashboardEndpoints();
 
 // Seed Admin
 await app.SeedAdminAsync();

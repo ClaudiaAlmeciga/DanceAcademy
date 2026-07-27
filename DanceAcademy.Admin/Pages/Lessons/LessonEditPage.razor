@@ -1,0 +1,188 @@
+@page "/courses/{courseId:guid}/modules/{moduleId:guid}/lessons/{lessonId:guid}/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Editar lección — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/courses/@CourseId" class="text-decoration-none text-muted small">← Volver al curso</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <div class="card shadow-sm" style="max-width: 560px;">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Editar lección</h5>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label">Título <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Title" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Orden <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" @bind="model.Order" min="1" style="max-width: 120px;" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">URL del video</label>
+                    <input class="form-control" @bind="model.VideoUrl" placeholder="https://..." />
+                    @{ var embed = VideoEmbedHelper.Resolve(model.VideoUrl); }
+                    @if (embed is not null)
+                    {
+                        <div class="mt-2">
+                            @if (embed.IsDirect)
+                            {
+                                <video class="w-100 rounded" style="max-height: 280px;" controls preload="metadata">
+                                    <source src="@embed.EmbedUrl" />
+                                </video>
+                            }
+                            else
+                            {
+                                <div class="ratio ratio-16x9">
+                                    <iframe src="@embed.EmbedUrl"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowfullscreen
+                                            class="rounded border-0"></iframe>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(model.VideoUrl))
+                    {
+                        <div class="form-text text-warning">No se reconoce como YouTube, Vimeo o video directo (.mp4/.webm/.ogg).</div>
+                    }
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Contenido</label>
+                    <textarea class="form-control" rows="5" @bind="model.Content"
+                              placeholder="Descripción o notas de la lección (opcional)"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                    <a href="/courses/@CourseId" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid CourseId { get; set; }
+    [Parameter] public Guid ModuleId { get; set; }
+    [Parameter] public Guid LessonId { get; set; }
+
+    private readonly LessonEditModel model = new();
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var course = await AdminApi.GetCourseDetailAsync(CourseId);
+            if (course is null)
+            {
+                loadError = "Curso no encontrado.";
+                return;
+            }
+
+            AdminLessonDto? lesson = null;
+            foreach (var module in course.Modules)
+            {
+                lesson = module.Lessons.FirstOrDefault(l => l.Id == LessonId);
+                if (lesson is not null) break;
+            }
+
+            if (lesson is null)
+            {
+                loadError = "Lección no encontrada.";
+                return;
+            }
+            if (lesson.IsPublished)
+            {
+                Nav.NavigateTo($"/courses/{CourseId}", replace: true);
+                return;
+            }
+            model.Title = lesson.Title;
+            model.Order = lesson.Order;
+            model.VideoUrl = lesson.VideoUrl;
+            model.Content = lesson.Content;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar la lección.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "El título es obligatorio.";
+            return;
+        }
+        if (model.Order < 1)
+        {
+            errorMessage = "El orden debe ser >= 1.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var request = new UpdateLessonRequest(
+            model.Title.Trim(),
+            model.Order,
+            string.IsNullOrWhiteSpace(model.Content) ? null : model.Content.Trim(),
+            string.IsNullOrWhiteSpace(model.VideoUrl) ? null : model.VideoUrl.Trim()
+        );
+
+        var response = await AdminApi.UpdateLessonAsync(LessonId, request);
+
+        isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo($"/courses/{CourseId}");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            errorMessage = $"Ya existe una lección con orden {model.Order} en este módulo.";
+        }
+        else
+        {
+            errorMessage = $"Error al guardar (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private sealed class LessonEditModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public int Order { get; set; } = 1;
+        public string? VideoUrl { get; set; }
+        public string? Content { get; set; }
+    }
+}

@@ -1,0 +1,188 @@
+/* ===== FUENTE ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body, button, input, select, textarea {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* ===== SIDEBAR ===== */
+/* Aplica solo a la barra lateral existente */
+.d-flex.flex-column.bg-dark {
+    background: linear-gradient(175deg, #0f172a 0%, #1e1b4b 60%, #312e81 100%) !important;
+}
+
+/* Nombre de la academia */
+.d-flex.flex-column.bg-dark .fw-semibold {
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+}
+
+/* Nav link activo y hover */
+.d-flex.flex-column.bg-dark .nav-link.active {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-left: 3px solid #818cf8;
+    padding-left: calc(1rem - 3px) !important;
+    color: #fff !important;
+    border-radius: 0 6px 6px 0;
+}
+.d-flex.flex-column.bg-dark .nav-link:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+    border-radius: 6px;
+}
+
+/* ===== BOTONES ===== */
+.btn {
+    border-radius: 7px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+.btn-sm { border-radius: 5px; }
+
+.btn-primary {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #4338ca;
+    border-color: #4338ca;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+.btn-outline-primary {
+    color: #4f46e5;
+    border-color: #4f46e5;
+}
+.btn-outline-primary:hover {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+.btn-success {
+    background-color: #059669;
+    border-color: #059669;
+}
+.btn-success:hover {
+    background-color: #047857;
+    border-color: #047857;
+}
+
+/* ===== CARDS ===== */
+.card {
+    border-radius: 10px !important;
+    border: 1px solid #e9ecef !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.07) !important;
+    transition: box-shadow 0.15s ease;
+}
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    background-color: #f8fafc !important;
+    border-bottom-color: #f1f5f9 !important;
+}
+
+/* ===== FONDO DEL CONTENIDO ===== */
+.bg-light {
+    background-color: #f8f7ff !important;
+}
+
+/* ===== TABLA ===== */
+.table thead th {
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6366f1;
+    border-bottom-width: 2px;
+    border-bottom-color: #e0e7ff;
+}
+.table-hover > tbody > tr:hover > * {
+    background-color: #f5f3ff;
+}
+.table-light {
+    --bs-table-bg: #f8f7ff;
+}
+
+/* ===== BADGES DE NIVEL ===== */
+.badge-level-beginner     { background-color: #059669 !important; color: #fff !important; }
+.badge-level-intermediate { background-color: #d97706 !important; color: #fff !important; }
+.badge-level-advanced     { background-color: #dc2626 !important; color: #fff !important; }
+
+/* ===== BADGES ===== */
+.badge {
+    border-radius: 5px;
+    font-weight: 500;
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+    padding: 0.3em 0.65em;
+}
+.badge.bg-success {
+    background-color: #059669 !important;
+}
+.badge.bg-warning {
+    background-color: #d97706 !important;
+    color: #fff !important;
+}
+.badge.bg-secondary {
+    background-color: #6366f1 !important;
+}
+
+/* ===== FORMULARIOS ===== */
+.form-control,
+.form-select {
+    border-radius: 7px;
+    border-color: #e2e8f0;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* ===== ALERTAS ===== */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+.alert-danger {
+    background-color: #fef2f2;
+    color: #991b1b;
+}
+
+/* ===== PASSWORD TOGGLE ===== */
+/* Oculta el ícono nativo de "mostrar contraseña" de Edge/Windows —
+   sin esto se ve duplicado junto al ícono propio (da-password-toggle). */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+.da-password-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.75rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: none;
+    border-radius: 0 7px 7px 0;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.da-password-toggle:hover { color: #6366f1; }
+.form-control:focus + .da-password-toggle {
+    border-color: #6366f1;
+    box-shadow: 3px 0 0 3px rgba(99,102,241,.12);
+}
+
+/* ===== LOGIN ===== */
+.min-vh-100.bg-light {
+    background: linear-gradient(135deg, #0f172a 0%, #312e81 60%, #4f46e5 100%) !important;
+}
+.min-vh-100.bg-light .card {
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25) !important;
+    border: none !important;
+}

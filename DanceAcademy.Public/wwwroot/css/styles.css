@@ -1,0 +1,314 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ===== BASE ===== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #1f2937;
+    background: #fff;
+}
+
+/* ===== VARIABLES ===== */
+:root {
+    --da-primary:      #4f46e5;
+    --da-primary-dark: #4338ca;
+    --da-primary-light: #ede9fe;
+    --da-hero-from:    #1e1b4b;
+    --da-hero-to:      #4f46e5;
+}
+
+/* ===== NAVBAR ===== */
+.da-navbar {
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 0.75rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 8px rgba(0,0,0,.06);
+}
+.da-navbar .navbar-brand {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #111827;
+}
+.da-navbar .navbar-brand:hover { color: var(--da-primary); }
+.da-navbar .nav-link {
+    color: #4b5563;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: color 0.15s;
+}
+.da-navbar .nav-link:hover,
+.da-navbar .nav-link.active { color: var(--da-primary); }
+
+/* ===== BUTTONS ===== */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+.btn-primary {
+    background-color: var(--da-primary);
+    border-color: var(--da-primary);
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--da-primary-dark);
+    border-color: var(--da-primary-dark);
+    box-shadow: 0 4px 12px rgba(79,70,229,.35);
+}
+.btn-outline-primary {
+    color: var(--da-primary);
+    border-color: var(--da-primary);
+}
+.btn-outline-primary:hover {
+    background-color: var(--da-primary);
+    border-color: var(--da-primary);
+}
+.btn-outline-secondary { border-radius: 8px; }
+
+/* ===== HERO ===== */
+.da-hero {
+    background: linear-gradient(135deg, var(--da-hero-from) 0%, var(--da-hero-to) 100%);
+    color: #fff;
+    padding: 6rem 1rem;
+}
+.da-hero-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+}
+.da-hero-subtitle {
+    font-size: 1.125rem;
+    opacity: 0.85;
+    line-height: 1.6;
+    margin-bottom: 0;
+}
+.da-hero-btn {
+    font-weight: 600;
+    padding: 0.65rem 1.75rem;
+    border-radius: 10px;
+}
+.btn-light { color: var(--da-primary); }
+.btn-outline-light:hover { color: var(--da-primary); }
+
+/* ===== FEATURES ===== */
+.da-features {
+    padding: 5rem 1rem;
+    background: #fafafa;
+}
+.da-feature-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 2rem 1.5rem;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.06);
+    height: 100%;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.da-feature-card:hover {
+    box-shadow: 0 4px 20px rgba(79,70,229,.14), 0 8px 28px rgba(0,0,0,.08);
+    transform: translateY(-3px);
+}
+.da-feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    width: 56px;
+    height: 56px;
+    background: var(--da-primary-light);
+    color: var(--da-primary);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+}
+.da-feature-card h5 {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+/* ===== CTA ===== */
+.da-cta {
+    padding: 5rem 1rem;
+    background: #fff;
+}
+
+/* ===== FOOTER ===== */
+.da-footer {
+    padding: 1.5rem 0;
+    border-top: 1px solid #f1f5f9;
+    background: #fafafa;
+}
+
+/* ===== AUTH LAYOUT ===== */
+.da-auth-bg {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4f46e5 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+.da-auth-card {
+    width: 100%;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 2.5rem 2.25rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.da-auth-card .form-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.3rem;
+}
+.da-auth-card .form-control {
+    border-radius: 8px;
+    border-color: #e2e8f0;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.da-auth-card .form-control:focus {
+    border-color: var(--da-primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+}
+.da-auth-card a {
+    color: var(--da-primary);
+    font-weight: 500;
+    text-decoration: none;
+}
+.da-auth-card a:hover { text-decoration: underline; }
+.alert-danger {
+    background: #fef2f2;
+    color: #991b1b;
+    border: none;
+    border-radius: 8px;
+}
+.alert-success {
+    background: #f0fdf4;
+    color: #166534;
+    border: none;
+    border-radius: 8px;
+}
+
+/* ===== PASSWORD TOGGLE ===== */
+/* Oculta el ícono nativo de "mostrar contraseña" de Edge/Windows —
+   sin esto se ve duplicado junto al ícono propio (da-password-toggle). */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+.da-password-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.75rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.da-password-toggle:hover { color: var(--da-primary); }
+.form-control:focus + .da-password-toggle {
+    border-color: var(--da-primary);
+    box-shadow: 3px 0 0 3px rgba(79,70,229,.12);
+}
+
+/* ===== LOADING SPLASH ===== */
+.da-splash {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #fff;
+}
+.loading-progress {
+    display: block;
+    width: 6rem;
+    height: 6rem;
+}
+.loading-progress circle {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 0.6rem;
+    transform-origin: 50% 50%;
+    transform: rotate(-90deg);
+}
+.loading-progress circle:last-child {
+    stroke: var(--da-primary);
+    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+    transition: stroke-dasharray 0.05s ease-in-out;
+}
+
+/* ===== LEVEL BADGES ===== */
+.badge-level-beginner     { background-color: #059669 !important; color: #fff !important; }
+.badge-level-intermediate { background-color: #d97706 !important; color: #fff !important; }
+.badge-level-advanced     { background-color: #dc2626 !important; color: #fff !important; }
+
+/* ===== COURSES PAGE ===== */
+.da-filter-bar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.da-course-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.06);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.da-course-card:hover {
+    box-shadow: 0 4px 20px rgba(79,70,229,.14), 0 8px 28px rgba(0,0,0,.08);
+    transform: translateY(-3px);
+}
+.da-course-card-body {
+    padding: 1.5rem 1.5rem 1rem;
+    flex: 1;
+}
+.da-course-card-footer {
+    padding: 0 1.5rem 1.5rem;
+}
+.da-course-title {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #111827;
+}
+.da-course-description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+.da-pagination .btn { min-width: 2.5rem; }
+
+/* ===== BLAZOR ERROR ===== */
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0; left: 0;
+    box-shadow: 0 -1px 2px rgba(0,0,0,.2);
+    display: none;
+    padding: 0.6rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

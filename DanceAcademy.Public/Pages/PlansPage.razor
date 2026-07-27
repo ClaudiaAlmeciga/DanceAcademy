@@ -1,0 +1,59 @@
+@page "/planes"
+
+@inject PublicApiService Api
+
+<PageTitle>Planes — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-2">Planes de suscripción</h2>
+    <p class="text-muted mb-4">Suscríbete y accede a todos los cursos incluidos en tu plan.</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (plans is null || plans.Count == 0)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">No hay planes disponibles por el momento.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var plan in plans)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="da-course-card">
+                        <div class="da-course-card-body">
+                            <h5 class="da-course-title">@plan.Name</h5>
+                            @if (!string.IsNullOrWhiteSpace(plan.Description))
+                            {
+                                <p class="da-course-description text-muted">@plan.Description</p>
+                            }
+                            <p class="fs-4 fw-bold mb-0">
+                                $@plan.Price.ToString("N0")
+                                <span class="fs-6 fw-normal text-muted">/ @plan.BillingPeriodDays días</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<SubscriptionPlanDto>? plans;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        plans = await Api.GetSubscriptionPlansAsync();
+        isLoading = false;
+    }
+}

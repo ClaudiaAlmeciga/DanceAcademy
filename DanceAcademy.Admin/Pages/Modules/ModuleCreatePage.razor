@@ -1,0 +1,93 @@
+@page "/courses/{courseId:guid}/modules/new"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Nuevo módulo — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/courses/@CourseId" class="text-decoration-none text-muted small">← Volver al curso</a>
+</div>
+
+<div class="card shadow-sm" style="max-width: 520px;">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Nuevo módulo</h5>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Título <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Title" placeholder="Ej: Introducción al ritmo" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Orden <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" @bind="model.Order" min="1" style="max-width: 120px;" />
+                <div class="form-text">Posición del módulo dentro del curso.</div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @(isLoading ? "Guardando..." : "Crear módulo")
+                </button>
+                <a href="/courses/@CourseId" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid CourseId { get; set; }
+
+    private readonly ModuleCreateModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "El título es obligatorio.";
+            return;
+        }
+        if (model.Order < 1)
+        {
+            errorMessage = "El orden debe ser >= 1.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var request = new CreateModuleRequest(model.Title.Trim(), model.Order);
+        var response = await AdminApi.CreateModuleAsync(CourseId, request);
+
+        isLoading = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo($"/courses/{CourseId}");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            errorMessage = $"Ya existe un módulo con orden {model.Order} en este curso.";
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            errorMessage = "Curso no encontrado.";
+        }
+        else
+        {
+            errorMessage = "Error al crear el módulo. Intenta de nuevo.";
+        }
+    }
+
+    private sealed class ModuleCreateModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public int Order { get; set; } = 1;
+    }
+}

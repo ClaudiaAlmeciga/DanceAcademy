@@ -1,0 +1,117 @@
+@page "/perfil"
+@attribute [Authorize]
+
+@inject PublicApiService Api
+
+<PageTitle>Mi Perfil — Dance Academy</PageTitle>
+
+<div class="container py-5" style="max-width: 480px;">
+    <h2 class="fw-bold mb-4">Mi Perfil</h2>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5 text-muted">Cargando...</div>
+    }
+    else if (loadError is not null)
+    {
+        <div class="alert alert-danger">@loadError</div>
+    }
+    else
+    {
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+        @if (successMessage is not null)
+        {
+            <div class="alert alert-success py-2 small">@successMessage</div>
+        }
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">Email</label>
+                    <input class="form-control" value="@email" disabled />
+                </div>
+
+                <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium small">Nombre completo</label>
+                        <input class="form-control" @bind="model.FullName" placeholder="Tu nombre completo" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium small">Teléfono</label>
+                        <input class="form-control" @bind="model.Phone" placeholder="Ej: 3001234567" />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-medium small">Fecha de nacimiento</label>
+                        <input type="date" class="form-control" @bind="model.BirthDate" style="max-width: 200px;" />
+                    </div>
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly ProfileModel model = new();
+    private string email = string.Empty;
+    private string? loadError;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var profile = await Api.GetProfileAsync();
+            if (profile is null)
+            {
+                loadError = "No se pudo cargar tu perfil.";
+                return;
+            }
+
+            email = profile.Email;
+            model.FullName = profile.FullName;
+            model.Phone = profile.Phone;
+            model.BirthDate = profile.BirthDate;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar tu perfil.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        var request = new UpdateProfileRequest(model.FullName?.Trim(), model.Phone?.Trim(), model.BirthDate);
+        var (success, error) = await Api.UpdateProfileAsync(request);
+
+        isSaving = false;
+
+        if (success)
+            successMessage = "Perfil actualizado correctamente.";
+        else
+            errorMessage = error;
+    }
+
+    private sealed class ProfileModel
+    {
+        public string? FullName { get; set; }
+        public string? Phone { get; set; }
+        public DateOnly? BirthDate { get; set; }
+    }
+}

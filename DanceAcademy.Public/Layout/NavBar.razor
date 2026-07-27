@@ -1,0 +1,52 @@
+@inject PublicApiService Api
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
+
+<nav class="navbar navbar-expand-md navbar-light da-navbar">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+            <img src="logo.svg" width="32" height="32" alt="Dance Academy" />
+            <span class="fw-bold">Dance Academy</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navContent">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/cursos" Match="NavLinkMatch.Prefix">Cursos</NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/planes" Match="NavLinkMatch.Prefix">Planes</NavLink>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-2">
+                <AuthorizeView>
+                    <Authorized>
+                        <a class="nav-link small me-1" href="/mis-cursos">Mis Cursos</a>
+                        <a class="nav-link small me-1" href="/perfil">Mi Perfil</a>
+                        <span class="text-muted small me-1">@context.User.FindFirst(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value</span>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="HandleLogoutAsync">
+                            Cerrar sesión
+                        </button>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a class="btn btn-sm btn-outline-primary" href="/login">Iniciar sesión</a>
+                        <a class="btn btn-sm btn-primary" href="/register">Registrarse</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private async Task HandleLogoutAsync()
+    {
+        await Api.LogoutAsync();
+        Nav.NavigateTo("/", forceLoad: false);
+    }
+}

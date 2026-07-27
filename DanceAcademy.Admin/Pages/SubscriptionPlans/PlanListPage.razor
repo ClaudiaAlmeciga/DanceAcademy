@@ -1,0 +1,127 @@
+@page "/plans"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+
+<PageTitle>Planes — Dance Academy Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Planes de suscripción</h4>
+    <a class="btn btn-primary btn-sm" href="/plans/new">+ Nuevo plan</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (plans is not null)
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Precio</th>
+                        <th>Período (días)</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var plan in plans)
+                    {
+                        <tr>
+                            <td class="align-middle">@plan.Name</td>
+                            <td class="align-middle">$@plan.Price.ToString("N0")</td>
+                            <td class="align-middle">@plan.BillingPeriodDays</td>
+                            <td class="align-middle">
+                                @if (plan.IsActive)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </td>
+                            <td class="align-middle text-end">
+                                @if (confirmingPlanId == plan.Id)
+                                {
+                                    <span class="small text-danger me-2">¿Eliminar?</span>
+                                    <button class="btn btn-sm btn-danger me-1"
+                                            @onclick="() => HandleDeletePlanAsync(plan.Id)"
+                                            disabled="@isBusy">
+                                        Sí
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                            @onclick="() => confirmingPlanId = null">
+                                        No
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-sm btn-outline-secondary me-1" href="/plans/@plan.Id/edit">
+                                        Editar
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => confirmingPlanId = plan.Id"
+                                            disabled="@isBusy">
+                                        Eliminar
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!plans.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                No hay planes. <a href="/plans/new">Crea el primero.</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<AdminSubscriptionPlanDto>? plans;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isBusy;
+    private Guid? confirmingPlanId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            plans = await AdminApi.GetSubscriptionPlansAsync();
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de planes.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleDeletePlanAsync(Guid planId)
+    {
+        isBusy = true;
+        confirmingPlanId = null;
+        var response = await AdminApi.DeleteSubscriptionPlanAsync(planId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            plans = plans?.Where(p => p.Id != planId).ToList();
+        else
+            errorMessage = "No se pudo eliminar el plan.";
+    }
+}

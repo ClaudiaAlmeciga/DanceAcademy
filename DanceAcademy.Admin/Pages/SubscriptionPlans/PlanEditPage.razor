@@ -1,0 +1,155 @@
+@page "/plans/{planId:guid}/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Editar plan — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/plans" class="text-decoration-none text-muted small">← Volver a planes</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <div class="card shadow-sm" style="max-width: 480px;">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Editar plan</h5>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Name" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea class="form-control" rows="3" @bind="model.Description"></textarea>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Precio <span class="text-danger">*</span></label>
+                        <input type="number" min="0.01" step="0.01" class="form-control" @bind="model.Price" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Período (días) <span class="text-danger">*</span></label>
+                        <input type="number" min="1" class="form-control" @bind="model.BillingPeriodDays" />
+                    </div>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="isActive" @bind="model.IsActive" />
+                    <label class="form-check-label" for="isActive">Activo</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                    <a href="/plans" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid PlanId { get; set; }
+
+    private readonly PlanEditModel model = new();
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var plan = await AdminApi.GetSubscriptionPlanDetailAsync(PlanId);
+            if (plan is null)
+            {
+                loadError = "Plan no encontrado.";
+                return;
+            }
+            model.Name = plan.Name;
+            model.Description = plan.Description;
+            model.Price = plan.Price;
+            model.BillingPeriodDays = plan.BillingPeriodDays;
+            model.IsActive = plan.IsActive;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar el plan.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Name))
+        {
+            errorMessage = "El nombre es obligatorio.";
+            return;
+        }
+        if (model.Price <= 0)
+        {
+            errorMessage = "El precio debe ser mayor a 0.";
+            return;
+        }
+        if (model.BillingPeriodDays < 1)
+        {
+            errorMessage = "El período debe ser >= 1 día.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var request = new UpdateSubscriptionPlanRequest(
+            model.Name.Trim(),
+            string.IsNullOrWhiteSpace(model.Description) ? null : model.Description.Trim(),
+            model.Price,
+            model.BillingPeriodDays,
+            model.IsActive
+        );
+        var response = await AdminApi.UpdateSubscriptionPlanAsync(PlanId, request);
+
+        isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/plans");
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            errorMessage = "Ya existe otro plan con ese nombre.";
+        }
+        else
+        {
+            errorMessage = $"Error al guardar (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private sealed class PlanEditModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public decimal Price { get; set; }
+        public int BillingPeriodDays { get; set; } = 30;
+        public bool IsActive { get; set; } = true;
+    }
+}

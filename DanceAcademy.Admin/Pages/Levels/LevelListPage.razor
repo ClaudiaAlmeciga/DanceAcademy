@@ -1,0 +1,127 @@
+@page "/levels"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+
+<PageTitle>Niveles — Dance Academy Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Niveles</h4>
+    <a class="btn btn-primary btn-sm" href="/levels/new">+ Nuevo nivel</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (levels is not null)
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Orden</th>
+                        <th>Nombre</th>
+                        <th>Estado</th>
+                        <th>Cursos</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var level in levels)
+                    {
+                        <tr>
+                            <td class="align-middle">@level.Order</td>
+                            <td class="align-middle">@level.Name</td>
+                            <td class="align-middle">
+                                @if (level.IsActive)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </td>
+                            <td class="align-middle">@level.CourseCount</td>
+                            <td class="align-middle text-end">
+                                @if (confirmingLevelId == level.Id)
+                                {
+                                    <span class="small text-danger me-2">¿Eliminar?</span>
+                                    <button class="btn btn-sm btn-danger me-1"
+                                            @onclick="() => HandleDeleteLevelAsync(level.Id)"
+                                            disabled="@isBusy">
+                                        Sí
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                            @onclick="() => confirmingLevelId = null">
+                                        No
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-sm btn-outline-secondary me-1" href="/levels/@level.Id/edit">
+                                        Editar
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => confirmingLevelId = level.Id"
+                                            disabled="@isBusy || level.CourseCount > 0">
+                                        Eliminar
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!levels.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                No hay niveles. <a href="/levels/new">Crea el primero.</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<AdminLevelDto>? levels;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isBusy;
+    private Guid? confirmingLevelId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            levels = await AdminApi.GetLevelsAsync();
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de niveles.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleDeleteLevelAsync(Guid levelId)
+    {
+        isBusy = true;
+        confirmingLevelId = null;
+        var response = await AdminApi.DeleteLevelAsync(levelId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            levels = levels?.Where(l => l.Id != levelId).ToList();
+        else
+            errorMessage = "No se pudo eliminar el nivel.";
+    }
+}

@@ -2,9 +2,7 @@
 using DanceAcademy.Application.Interfaces;
 using DanceAcademy.Domain.Entities;
 using DanceAcademy.Infrastructure.Data;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace DanceAcademy.Api.Endpoints;
 
