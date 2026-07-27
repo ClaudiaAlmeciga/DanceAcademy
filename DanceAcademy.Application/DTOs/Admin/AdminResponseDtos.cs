@@ -61,3 +61,17 @@ public sealed record AdminSubscriptionPlanDto(
     int BillingPeriodDays,
     bool IsActive
 );
+
+public sealed record AdminDashboardSummaryDto(
+    int TotalStudents,
+    int TotalPublishedCourses,
+    int TotalEnrollments,
+    double AverageCompletionRate
+);
+
+public sealed record AdminCourseStatsDto(
+    Guid CourseId,
+    string CourseTitle,
+    int EnrollmentCount,
+    double AverageCompletionRate
+);

@@ -111,6 +111,8 @@ app.MapAdminSubscriptionPlansEndpoints();
 app.MapPublicSubscriptionPlansEndpoints();
 app.MapMeEnrollmentsEndpoints();
 app.MapMeProgressEndpoints();
+app.MapAdminDashboardEndpoints();
+app.MapMeDashboardEndpoints();
 
 // Seed Admin
 await app.SeedAdminAsync();

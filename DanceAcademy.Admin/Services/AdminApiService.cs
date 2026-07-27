@@ -99,4 +99,10 @@ public class AdminApiService(IHttpClientFactory factory)
 
     public Task<HttpResponseMessage> DeactivateSubscriptionPlanAsync(Guid planId, CancellationToken ct = default)
         => Client.PatchAsync($"/admin/subscription-plans/{planId}/deactivate", null, ct);
+
+    public Task<AdminDashboardSummaryDto?> GetDashboardSummaryAsync(CancellationToken ct = default)
+        => Client.GetFromJsonAsync<AdminDashboardSummaryDto>("/admin/dashboard/summary", ct);
+
+    public Task<List<AdminCourseStatsDto>?> GetCourseStatsAsync(CancellationToken ct = default)
+        => Client.GetFromJsonAsync<List<AdminCourseStatsDto>>("/admin/dashboard/courses", ct);
 }

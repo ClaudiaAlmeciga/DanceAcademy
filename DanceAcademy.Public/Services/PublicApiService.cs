@@ -200,6 +200,15 @@ public class PublicApiService(
             : (false, "No se pudo actualizar el avance. Intenta de nuevo.");
     }
 
+    public async Task<MyDashboardDto?> GetMyDashboardAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/me/dashboard", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<MyDashboardDto>(cancellationToken: ct);
+    }
+
     public async Task<CourseProgressDto?> GetCourseProgressAsync(Guid courseId, CancellationToken ct = default)
     {
         var response = await Client.GetAsync($"/me/progress/courses/{courseId}", ct);
