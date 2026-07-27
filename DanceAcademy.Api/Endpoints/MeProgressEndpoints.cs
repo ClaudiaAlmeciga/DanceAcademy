@@ -190,6 +190,56 @@ public static class MeProgressEndpoints
         })
         .WithName("GetMyCourseProgress");
 
+        // GET /me/progress/courses/{courseId}/lessons — lecciones del curso (ordenadas) con su estado de avance
+        group.MapGet("/courses/{courseId:guid}/lessons", async (
+            [FromRoute] Guid courseId,
+            ClaimsPrincipal principal,
+            AppDbContext db,
+            CancellationToken ct) =>
+        {
+            if (courseId == Guid.Empty)
+                return Results.BadRequest(new { message = "courseId inválido." });
+
+            var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var courseExists = await db.Courses
+                .AsNoTracking()
+                .AnyAsync(c => c.Id == courseId && c.IsPublished, ct);
+
+            if (!courseExists)
+                return Results.NotFound(new { message = "Curso no encontrado o no publicado." });
+
+            var isEnrolledInCourse = await db.Enrollments
+                .AsNoTracking()
+                .AnyAsync(e => e.UserId == userId && e.CourseId == courseId, ct);
+
+            if (!isEnrolledInCourse)
+                return Results.Forbid();
+
+            var lessons = await (
+                from l in db.Lessons.AsNoTracking()
+                join m in db.Modules.AsNoTracking() on l.ModuleId equals m.Id
+                where m.CourseId == courseId && l.IsPublished && m.IsPublished
+                orderby m.Order, l.Order
+                select new { l.Id, l.ModuleId, ModuleTitle = m.Title, LessonTitle = l.Title, l.Order })
+                .ToListAsync(ct);
+
+            var completedLessonIds = await db.LessonProgresses
+                .AsNoTracking()
+                .Where(p => p.UserId == userId && p.IsCompleted)
+                .Select(p => p.LessonId)
+                .ToListAsync(ct);
+            var completedLessonIdSet = completedLessonIds.ToHashSet();
+
+            var lessonProgressList = lessons
+                .Select(l => new LessonProgressListItemDto(
+                    l.Id, l.ModuleId, l.ModuleTitle, l.LessonTitle, l.Order, completedLessonIdSet.Contains(l.Id)))
+                .ToList();
+
+            return Results.Ok(lessonProgressList);
+        })
+        .WithName("GetMyCourseLessonProgress");
+
         return app;
     }
 }

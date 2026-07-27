@@ -218,6 +218,15 @@ public class PublicApiService(
         return await response.Content.ReadFromJsonAsync<CourseProgressDto>(cancellationToken: ct);
     }
 
+    public async Task<List<LessonProgressListItemDto>?> GetCourseLessonProgressAsync(Guid courseId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/me/progress/courses/{courseId}/lessons", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<LessonProgressListItemDto>>(cancellationToken: ct);
+    }
+
     private sealed record TokenResponse(
         [property: JsonPropertyName("access_token")] string AccessToken
     );

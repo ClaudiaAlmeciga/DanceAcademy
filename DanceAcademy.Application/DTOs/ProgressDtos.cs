@@ -21,3 +21,16 @@ public sealed record CourseProgressDto(
     int CompletedLessons,
     double ProgressPercentage
 );
+
+/// <summary>
+/// Lección del curso (ordenada) con su estado de avance, para el menú de
+/// navegación entre lecciones y para calcular la "siguiente lección".
+/// </summary>
+public sealed record LessonProgressListItemDto(
+    Guid LessonId,
+    Guid ModuleId,
+    string ModuleTitle,
+    string LessonTitle,
+    int Order,
+    bool IsCompleted
+);

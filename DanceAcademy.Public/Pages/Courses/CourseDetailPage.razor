@@ -104,12 +104,19 @@
                             <ul class="list-group list-group-flush">
                                 @foreach (var lesson in module.Lessons)
                                 {
-                                    <li class="list-group-item px-0">
-                                        <a href="/cursos/@CourseId/lecciones/@lesson.Id" class="text-decoration-none">
-                                            @lesson.Order. @lesson.Title
-                                            @if (lesson.HasVideo)
+                                    var isCompleted = completedLessonIds.Contains(lesson.Id);
+                                    <li class="list-group-item px-0 @(isCompleted ? "list-group-item-success" : "")">
+                                        <a href="/cursos/@CourseId/lecciones/@lesson.Id" class="text-decoration-none d-flex justify-content-between align-items-center">
+                                            <span>
+                                                @lesson.Order. @lesson.Title
+                                                @if (lesson.HasVideo)
+                                                {
+                                                    <span class="text-muted small ms-1">▶</span>
+                                                }
+                                            </span>
+                                            @if (isCompleted)
                                             {
-                                                <span class="text-muted small ms-1">▶</span>
+                                                <span>✓</span>
                                             }
                                         </a>
                                     </li>
@@ -130,6 +137,7 @@
 
     private CourseDetailDto? course;
     private CourseProgressDto? progress;
+    private HashSet<Guid> completedLessonIds = [];
     private bool isLoading = true;
     private bool isAuthenticated;
     private bool isEnrolled;
@@ -153,8 +161,16 @@
             isEnrolled = myEnrollments?.Any(e => e.CourseId == CourseId) ?? false;
 
             if (isEnrolled)
-                progress = await Api.GetCourseProgressAsync(CourseId);
+                await LoadProgressAsync();
         }
+    }
+
+    private async Task LoadProgressAsync()
+    {
+        progress = await Api.GetCourseProgressAsync(CourseId);
+
+        var lessonProgress = await Api.GetCourseLessonProgressAsync(CourseId);
+        completedLessonIds = lessonProgress?.Where(l => l.IsCompleted).Select(l => l.LessonId).ToHashSet() ?? [];
     }
 
     private async Task HandleEnrollAsync()
@@ -169,7 +185,7 @@
         if (success)
         {
             isEnrolled = true;
-            progress = await Api.GetCourseProgressAsync(CourseId);
+            await LoadProgressAsync();
         }
         else
         {
