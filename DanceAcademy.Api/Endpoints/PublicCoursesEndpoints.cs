@@ -4,6 +4,7 @@ using DanceAcademy.Application.Helpers;
 using DanceAcademy.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace DanceAcademy.Api.Endpoints;
 
@@ -93,7 +94,7 @@ public static class PublicCoursesEndpoints
                             m.Lessons
                                 .Where(l => l.IsPublished)
                                 .OrderBy(l => l.Order)
-                                .Select(l => new LessonDto(l.Id, l.Title, l.Order, l.VideoUrl))
+                                .Select(l => new LessonDto(l.Id, l.Title, l.Order, l.VideoUrl != null))
                                 .ToList()
                         ))
                         .ToList()
@@ -106,9 +107,13 @@ public static class PublicCoursesEndpoints
         })
         .WithName("PublicGetCourseDetail");
 
-        // detalle de lección — solo si lección, módulo y curso están publicados
+        // detalle de lección — solo si lección, módulo y curso están publicados.
+        // El temario es público (título), pero contenido/video solo si el usuario
+        // está inscrito en el curso — endpoint sin RequireAuthorization porque también
+        // debe responder (con RequiresEnrollment=true) a visitantes anónimos.
         group.MapGet("/lessons/{lessonId:guid}", async (
             [FromRoute] Guid lessonId,
+            ClaimsPrincipal principal,
             AppDbContext db,
             CancellationToken ct) =>
         {
@@ -134,6 +139,28 @@ public static class PublicCoursesEndpoints
             if (lesson is null)
                 return Results.NotFound(new { message = "Lección no encontrada o no publicada." });
 
+            var isEnrolled = false;
+            var userIdClaim = principal.Identity?.IsAuthenticated == true
+                ? principal.FindFirstValue(ClaimTypes.NameIdentifier)
+                : null;
+
+            if (userIdClaim is not null && Guid.TryParse(userIdClaim, out var userId))
+            {
+                isEnrolled = await db.Enrollments
+                    .AsNoTracking()
+                    .AnyAsync(e => e.UserId == userId && e.CourseId == lesson.CourseId, ct);
+            }
+
+            if (!isEnrolled)
+            {
+                var lockedDto = new LessonDetailDto(
+                    lesson.Id, lesson.ModuleId, lesson.CourseId, lesson.Title,
+                    Content: null, VideoUrl: null, EmbedUrl: null, IsDirectVideo: false,
+                    RequiresEnrollment: true);
+
+                return Results.Ok(lockedDto);
+            }
+
             var embed = VideoEmbedHelper.Resolve(lesson.VideoUrl);
 
             var dto = new LessonDetailDto(
@@ -144,7 +171,8 @@ public static class PublicCoursesEndpoints
                 lesson.Content,
                 lesson.VideoUrl,
                 embed?.EmbedUrl,
-                embed?.IsDirect ?? false
+                embed?.IsDirect ?? false,
+                RequiresEnrollment: false
             );
 
             return Results.Ok(dto);

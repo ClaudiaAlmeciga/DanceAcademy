@@ -107,7 +107,7 @@
                                     <li class="list-group-item px-0">
                                         <a href="/cursos/@CourseId/lecciones/@lesson.Id" class="text-decoration-none">
                                             @lesson.Order. @lesson.Title
-                                            @if (!string.IsNullOrWhiteSpace(lesson.VideoUrl))
+                                            @if (lesson.HasVideo)
                                             {
                                                 <span class="text-muted small ms-1">▶</span>
                                             }

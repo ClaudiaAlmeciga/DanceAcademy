@@ -49,7 +49,7 @@ public sealed record LessonDto(
     Guid Id,
     string Title,
     int Order,
-    string? VideoUrl
+    bool HasVideo
 );
 
 public sealed record LessonDetailDto(
@@ -60,7 +60,8 @@ public sealed record LessonDetailDto(
     string? Content,
     string? VideoUrl,
     string? EmbedUrl,
-    bool IsDirectVideo
+    bool IsDirectVideo,
+    bool RequiresEnrollment
 );
 
 public sealed record PagedResult<T>(

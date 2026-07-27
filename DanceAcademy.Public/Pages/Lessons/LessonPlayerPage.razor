@@ -27,32 +27,42 @@
     {
         <h3 class="fw-bold mb-3">@lesson.Title</h3>
 
-        @if (lesson.EmbedUrl is not null)
+        @if (lesson.RequiresEnrollment)
         {
-            @if (lesson.IsDirectVideo)
-            {
-                <video class="w-100 rounded mb-4" style="max-height: 500px;" controls preload="metadata">
-                    <source src="@lesson.EmbedUrl" />
-                </video>
-            }
-            else
-            {
-                <div class="ratio ratio-16x9 mb-4">
-                    <iframe src="@lesson.EmbedUrl"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen
-                            class="rounded border-0"></iframe>
-                </div>
-            }
+            <div class="alert alert-warning">
+                Debes inscribirte en el curso para ver esta lección.
+                <a href="/cursos/@CourseId" class="alert-link">Ir al curso para inscribirme →</a>
+            </div>
         }
         else
         {
-            <div class="alert alert-secondary">Esta lección no tiene video.</div>
-        }
+            @if (lesson.EmbedUrl is not null)
+            {
+                @if (lesson.IsDirectVideo)
+                {
+                    <video class="w-100 rounded mb-4" style="max-height: 500px;" controls preload="metadata">
+                        <source src="@lesson.EmbedUrl" />
+                    </video>
+                }
+                else
+                {
+                    <div class="ratio ratio-16x9 mb-4">
+                        <iframe src="@lesson.EmbedUrl"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen
+                                class="rounded border-0"></iframe>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-secondary">Esta lección no tiene video.</div>
+            }
 
-        @if (!string.IsNullOrWhiteSpace(lesson.Content))
-        {
-            <p class="mt-3">@lesson.Content</p>
+            @if (!string.IsNullOrWhiteSpace(lesson.Content))
+            {
+                <p class="mt-3">@lesson.Content</p>
+            }
         }
 
         @if (progress is not null)
