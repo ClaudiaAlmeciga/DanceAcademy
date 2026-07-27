@@ -54,6 +54,28 @@
         {
             <p class="mt-3">@lesson.Content</p>
         }
+
+        @if (progress is not null)
+        {
+            @if (progressError is not null)
+            {
+                <div class="alert alert-danger py-2 small mt-3">@progressError</div>
+            }
+            <div class="mt-3">
+                @if (progress.IsCompleted)
+                {
+                    <button class="btn btn-outline-success" disabled="@isUpdatingProgress" @onclick="HandleUnmarkCompleteAsync">
+                        ✓ Completada — clic para desmarcar
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-success" disabled="@isUpdatingProgress" @onclick="HandleMarkCompleteAsync">
+                        @(isUpdatingProgress ? "Guardando..." : "Marcar como completada")
+                    </button>
+                }
+            </div>
+        }
     }
 </div>
 
@@ -61,12 +83,60 @@
     [Parameter] public Guid CourseId { get; set; }
     [Parameter] public Guid LessonId { get; set; }
 
+    [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
+
     private LessonDetailDto? lesson;
+    private LessonProgressDto? progress;
     private bool isLoading = true;
+    private bool isUpdatingProgress;
+    private string? progressError;
 
     protected override async Task OnInitializedAsync()
     {
         lesson = await Api.GetLessonDetailAsync(LessonId);
         isLoading = false;
+
+        var isAuthenticated = false;
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+        }
+
+        if (isAuthenticated && lesson is not null)
+        {
+            // Null significa "no inscrito" o error — el botón se oculta en ese caso.
+            progress = await Api.GetLessonProgressAsync(LessonId);
+        }
+    }
+
+    private async Task HandleMarkCompleteAsync()
+    {
+        isUpdatingProgress = true;
+        progressError = null;
+
+        var (success, error) = await Api.MarkLessonCompleteAsync(LessonId);
+
+        isUpdatingProgress = false;
+
+        if (success)
+            progress = progress! with { IsCompleted = true, CompletedAt = DateTimeOffset.UtcNow };
+        else
+            progressError = error;
+    }
+
+    private async Task HandleUnmarkCompleteAsync()
+    {
+        isUpdatingProgress = true;
+        progressError = null;
+
+        var (success, error) = await Api.UnmarkLessonCompleteAsync(LessonId);
+
+        isUpdatingProgress = false;
+
+        if (success)
+            progress = progress! with { IsCompleted = false, CompletedAt = null };
+        else
+            progressError = error;
     }
 }

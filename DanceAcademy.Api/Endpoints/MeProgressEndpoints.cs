@@ -18,6 +18,45 @@ public static class MeProgressEndpoints
             .WithTags("Me - Progress")
             .RequireAuthorization();
 
+        // GET /me/progress/lessons/{lessonId} — estado de avance del usuario en una lección puntual
+        group.MapGet("/lessons/{lessonId:guid}", async (
+            [FromRoute] Guid lessonId,
+            ClaimsPrincipal principal,
+            AppDbContext db,
+            CancellationToken ct) =>
+        {
+            if (lessonId == Guid.Empty)
+                return Results.BadRequest(new { message = "lessonId inválido." });
+
+            var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var lessonInfo = await (
+                from l in db.Lessons.AsNoTracking()
+                join m in db.Modules.AsNoTracking() on l.ModuleId equals m.Id
+                join c in db.Courses.AsNoTracking() on m.CourseId equals c.Id
+                where l.Id == lessonId
+                select new { CourseId = c.Id })
+                .SingleOrDefaultAsync(ct);
+
+            if (lessonInfo is null)
+                return Results.NotFound(new { message = "Lección no encontrada." });
+
+            var isEnrolledInCourse = await db.Enrollments
+                .AsNoTracking()
+                .AnyAsync(e => e.UserId == userId && e.CourseId == lessonInfo.CourseId, ct);
+
+            if (!isEnrolledInCourse)
+                return Results.Forbid();
+
+            var lessonProgress = await db.LessonProgresses
+                .AsNoTracking()
+                .SingleOrDefaultAsync(p => p.UserId == userId && p.LessonId == lessonId, ct);
+
+            var lessonProgressDto = new LessonProgressDto(lessonId, lessonProgress?.IsCompleted ?? false, lessonProgress?.CompletedAt);
+            return Results.Ok(lessonProgressDto);
+        })
+        .WithName("GetMyLessonProgress");
+
         // POST /me/progress/lessons/{lessonId}/complete — marca la lección como completada
         group.MapPost("/lessons/{lessonId:guid}/complete", async (
             [FromRoute] Guid lessonId,

@@ -46,7 +46,20 @@
             {
                 @if (isEnrolled)
                 {
-                    <span class="badge bg-success">✓ Ya estás inscrito en este curso</span>
+                    <span class="badge bg-success mb-2">✓ Ya estás inscrito en este curso</span>
+                    @if (progress is not null)
+                    {
+                        <div class="mt-2" style="max-width: 400px;">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Tu avance</span>
+                                <span>@progress.CompletedLessons de @progress.TotalLessons lecciones (@progress.ProgressPercentage.ToString("0.#")%)</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar"
+                                     style="width: @(progress.ProgressPercentage.ToString(System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                            </div>
+                        </div>
+                    }
                 }
                 else if (course.PricingType == PricingType.Free)
                 {
@@ -116,6 +129,7 @@
     [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
 
     private CourseDetailDto? course;
+    private CourseProgressDto? progress;
     private bool isLoading = true;
     private bool isAuthenticated;
     private bool isEnrolled;
@@ -137,6 +151,9 @@
         {
             var myEnrollments = await Api.GetMyEnrollmentsAsync();
             isEnrolled = myEnrollments?.Any(e => e.CourseId == CourseId) ?? false;
+
+            if (isEnrolled)
+                progress = await Api.GetCourseProgressAsync(CourseId);
         }
     }
 
@@ -150,9 +167,14 @@
         isEnrolling = false;
 
         if (success)
+        {
             isEnrolled = true;
+            progress = await Api.GetCourseProgressAsync(CourseId);
+        }
         else
+        {
             enrollError = error;
+        }
     }
 
     private static string PricingLabel(PricingType pricingType, decimal? price) => pricingType switch

@@ -175,6 +175,40 @@ public class PublicApiService(
         return (false, "No se pudo completar la inscripción. Intenta de nuevo.");
     }
 
+    public async Task<LessonProgressDto?> GetLessonProgressAsync(Guid lessonId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/me/progress/lessons/{lessonId}", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<LessonProgressDto>(cancellationToken: ct);
+    }
+
+    public async Task<(bool Success, string? Error)> MarkLessonCompleteAsync(Guid lessonId, CancellationToken ct = default)
+    {
+        var response = await Client.PostAsync($"/me/progress/lessons/{lessonId}/complete", null, ct);
+        return response.IsSuccessStatusCode
+            ? (true, null)
+            : (false, "No se pudo registrar el avance. Intenta de nuevo.");
+    }
+
+    public async Task<(bool Success, string? Error)> UnmarkLessonCompleteAsync(Guid lessonId, CancellationToken ct = default)
+    {
+        var response = await Client.DeleteAsync($"/me/progress/lessons/{lessonId}/complete", ct);
+        return response.IsSuccessStatusCode
+            ? (true, null)
+            : (false, "No se pudo actualizar el avance. Intenta de nuevo.");
+    }
+
+    public async Task<CourseProgressDto?> GetCourseProgressAsync(Guid courseId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/me/progress/courses/{courseId}", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<CourseProgressDto>(cancellationToken: ct);
+    }
+
     private sealed record TokenResponse(
         [property: JsonPropertyName("access_token")] string AccessToken
     );
