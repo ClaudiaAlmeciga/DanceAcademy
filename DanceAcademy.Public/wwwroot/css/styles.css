@@ -11,11 +11,13 @@ html, body {
 
 /* ===== VARIABLES ===== */
 :root {
-    --da-primary:      #4f46e5;
-    --da-primary-dark: #4338ca;
-    --da-primary-light: #ede9fe;
-    --da-hero-from:    #1e1b4b;
-    --da-hero-to:      #4f46e5;
+    --da-primary:      #A31E3F;
+    --da-primary-dark: #7A162F;
+    --da-primary-light: #F7E3E8;
+    --da-hero-from:    #3D0E1C;
+    --da-hero-to:      #A31E3F;
+    --da-accent-gold:      #C39A2E;
+    --da-accent-gold-dark: #A67F1D;
 }
 
 /* ===== NAVBAR ===== */
@@ -56,7 +58,7 @@ html, body {
 .btn-primary:hover, .btn-primary:focus {
     background-color: var(--da-primary-dark);
     border-color: var(--da-primary-dark);
-    box-shadow: 0 4px 12px rgba(79,70,229,.35);
+    box-shadow: 0 4px 12px rgba(163,30,63,.35);
 }
 .btn-outline-primary {
     color: var(--da-primary);
@@ -69,8 +71,32 @@ html, body {
 .btn-outline-secondary { border-radius: 8px; }
 
 /* ===== HERO ===== */
+/* Textura de pincelada roja, inspirada en el fondo del logo: franjas diagonales
+   claras/oscuras superpuestas sobre el degradado carmesí de marca. */
 .da-hero {
-    background: linear-gradient(135deg, var(--da-hero-from) 0%, var(--da-hero-to) 100%);
+    background:
+        repeating-linear-gradient(
+            112deg,
+            rgba(255,255,255,.05) 0px,
+            rgba(255,255,255,.05) 2px,
+            transparent 2px,
+            transparent 10px
+        ),
+        repeating-linear-gradient(
+            112deg,
+            rgba(0,0,0,.10) 0px,
+            rgba(0,0,0,.10) 3px,
+            transparent 3px,
+            transparent 16px
+        ),
+        repeating-linear-gradient(
+            118deg,
+            rgba(255,255,255,.04) 0px,
+            rgba(255,255,255,.04) 5px,
+            transparent 5px,
+            transparent 27px
+        ),
+        linear-gradient(135deg, var(--da-hero-from) 0%, var(--da-hero-to) 65%, #7A162F 100%);
     color: #fff;
     padding: 6rem 1rem;
 }
@@ -109,7 +135,7 @@ html, body {
     transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 .da-feature-card:hover {
-    box-shadow: 0 4px 20px rgba(79,70,229,.14), 0 8px 28px rgba(0,0,0,.08);
+    box-shadow: 0 4px 20px rgba(163,30,63,.14), 0 8px 28px rgba(0,0,0,.08);
     transform: translateY(-3px);
 }
 .da-feature-icon {
@@ -146,7 +172,7 @@ html, body {
 /* ===== AUTH LAYOUT ===== */
 .da-auth-bg {
     min-height: 100vh;
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4f46e5 100%);
+    background: linear-gradient(135deg, #3D0E1C 0%, #6B1530 55%, #A31E3F 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -173,7 +199,7 @@ html, body {
 }
 .da-auth-card .form-control:focus {
     border-color: var(--da-primary);
-    box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+    box-shadow: 0 0 0 3px rgba(163,30,63,.12);
 }
 .da-auth-card a {
     color: var(--da-primary);
@@ -218,7 +244,7 @@ input[type="password"]::-ms-clear {
 .da-password-toggle:hover { color: var(--da-primary); }
 .form-control:focus + .da-password-toggle {
     border-color: var(--da-primary);
-    box-shadow: 3px 0 0 3px rgba(79,70,229,.12);
+    box-shadow: 3px 0 0 3px rgba(163,30,63,.12);
 }
 
 /* ===== LOADING SPLASH ===== */
@@ -248,9 +274,9 @@ input[type="password"]::-ms-clear {
 }
 
 /* ===== LEVEL BADGES ===== */
-.badge-level-beginner     { background-color: #059669 !important; color: #fff !important; }
-.badge-level-intermediate { background-color: #d97706 !important; color: #fff !important; }
-.badge-level-advanced     { background-color: #dc2626 !important; color: #fff !important; }
+/* Los niveles son texto libre administrable (no un enum fijo), así que no se puede mapear
+   color por nombre de forma confiable — se usa el color de marca en vez de gris genérico. */
+.badge-level { background-color: var(--da-primary) !important; color: #fff !important; }
 
 /* ===== COURSES PAGE ===== */
 .da-filter-bar {
@@ -269,7 +295,7 @@ input[type="password"]::-ms-clear {
     transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 .da-course-card:hover {
-    box-shadow: 0 4px 20px rgba(79,70,229,.14), 0 8px 28px rgba(0,0,0,.08);
+    box-shadow: 0 4px 20px rgba(163,30,63,.14), 0 8px 28px rgba(0,0,0,.08);
     transform: translateY(-3px);
 }
 .da-course-card-body {
@@ -294,6 +320,56 @@ input[type="password"]::-ms-clear {
     margin-bottom: 0;
 }
 .da-pagination .btn { min-width: 2.5rem; }
+
+/* ===== INSTRUCTORS / TESTIMONIALS ===== */
+.da-instructor-avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: var(--da-primary-light);
+    color: var(--da-primary);
+    font-weight: 700;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.da-instructor-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.da-instructor-avatar-sm {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9rem;
+}
+
+/* ===== CERTIFICATE ===== */
+.da-certificate {
+    background: #fff;
+    border: 2px solid var(--da-primary);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(163,30,63,.12);
+}
+.da-certificate-seal {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--da-hero-from) 0%, var(--da-hero-to) 100%);
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+@media print {
+    .no-print, nav, footer { display: none !important; }
+}
 
 /* ===== BLAZOR ERROR ===== */
 #blazor-error-ui {

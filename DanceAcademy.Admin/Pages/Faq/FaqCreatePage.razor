@@ -1,0 +1,87 @@
+@page "/faq/new"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Nueva pregunta — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/faq" class="text-decoration-none text-muted small">← Volver a FAQ</a>
+</div>
+
+<div class="card shadow-sm" style="max-width: 520px;">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Nueva pregunta frecuente</h5>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Pregunta <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Question" placeholder="Ej: ¿Puedo cancelar mi suscripción?" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Respuesta <span class="text-danger">*</span></label>
+                <textarea class="form-control" rows="4" @bind="model.Answer"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Category" placeholder="Ej: Cuenta, Pagos, Contenido, Técnico" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Orden <span class="text-danger">*</span></label>
+                <input type="number" min="1" class="form-control" @bind="model.Order" />
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @(isLoading ? "Guardando..." : "Crear pregunta")
+                </button>
+                <a href="/faq" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly FaqCreateModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Question) || string.IsNullOrWhiteSpace(model.Answer) || string.IsNullOrWhiteSpace(model.Category))
+        {
+            errorMessage = "Pregunta, respuesta y categoría son obligatorias.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var request = new CreateFaqItemRequest(model.Question.Trim(), model.Answer.Trim(), model.Category.Trim(), model.Order);
+        var response = await AdminApi.CreateFaqItemAsync(request);
+
+        isLoading = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/faq");
+        }
+        else
+        {
+            errorMessage = $"Error al crear la pregunta (HTTP {(int)response.StatusCode}). Intenta de nuevo.";
+        }
+    }
+
+    private sealed class FaqCreateModel
+    {
+        public string Question { get; set; } = string.Empty;
+        public string Answer { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public int Order { get; set; } = 1;
+    }
+}

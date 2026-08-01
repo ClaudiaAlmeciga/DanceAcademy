@@ -113,6 +113,15 @@ app.MapMeEnrollmentsEndpoints();
 app.MapMeProgressEndpoints();
 app.MapAdminDashboardEndpoints();
 app.MapMeDashboardEndpoints();
+app.MapAdminInstructorsEndpoints();
+app.MapPublicInstructorsEndpoints();
+app.MapAdminTestimonialsEndpoints();
+app.MapPublicTestimonialsEndpoints();
+app.MapAdminFaqEndpoints();
+app.MapPublicFaqEndpoints();
+app.MapMeCertificatesEndpoints();
+app.MapAdminStudentsEndpoints();
+app.MapMeTestimonialsEndpoints();
 
 // Seed Admin
 await app.SeedAdminAsync();

@@ -1,0 +1,72 @@
+@page "/instructores"
+
+@inject PublicApiService Api
+
+<PageTitle>Instructores — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <h2 class="fw-bold mb-2">Nuestros instructores</h2>
+    <p class="text-muted mb-4">Profesionales con trayectoria real, no solo frente a cámara.</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (instructors is null || instructors.Count == 0)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Muy pronto vas a conocer a nuestro equipo de instructores.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var instructor in instructors)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="da-course-card text-center">
+                        <div class="da-course-card-body">
+                            <div class="da-instructor-avatar mx-auto mb-3">
+                                @if (!string.IsNullOrWhiteSpace(instructor.PhotoUrl))
+                                {
+                                    <img src="@instructor.PhotoUrl" alt="@instructor.FullName" />
+                                }
+                                else
+                                {
+                                    <span>@GetInitials(instructor.FullName)</span>
+                                }
+                            </div>
+                            <h5 class="da-course-title">@instructor.FullName</h5>
+                            <p class="text-primary small fw-semibold mb-2">@instructor.Specialty</p>
+                            @if (!string.IsNullOrWhiteSpace(instructor.Bio))
+                            {
+                                <p class="da-course-description text-muted">@instructor.Bio</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<InstructorDto>? instructors;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        instructors = await Api.GetInstructorsAsync();
+        isLoading = false;
+    }
+
+    private static string GetInitials(string fullName)
+    {
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2 ? $"{parts[0][0]}{parts[^1][0]}" : fullName[..Math.Min(2, fullName.Length)];
+    }
+}

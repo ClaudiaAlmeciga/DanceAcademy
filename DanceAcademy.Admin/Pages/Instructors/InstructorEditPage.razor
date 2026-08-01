@@ -1,0 +1,133 @@
+@page "/instructors/{instructorId:guid}/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Editar instructor — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/instructors" class="text-decoration-none text-muted small">← Volver a instructores</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <div class="card shadow-sm" style="max-width: 520px;">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Editar instructor</h5>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label">Nombre completo <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.FullName" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Especialidad <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Specialty" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Biografía</label>
+                    <textarea class="form-control" rows="4" @bind="model.Bio"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">URL de foto</label>
+                    <input class="form-control" @bind="model.PhotoUrl" />
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="isActive" @bind="model.IsActive" />
+                    <label class="form-check-label" for="isActive">Activo</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                    <a href="/instructors" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid InstructorId { get; set; }
+
+    private readonly InstructorEditModel model = new();
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var instructor = await AdminApi.GetInstructorDetailAsync(InstructorId);
+            if (instructor is null)
+            {
+                loadError = "Instructor no encontrado.";
+                return;
+            }
+            model.FullName = instructor.FullName;
+            model.Specialty = instructor.Specialty;
+            model.Bio = instructor.Bio;
+            model.PhotoUrl = instructor.PhotoUrl;
+            model.IsActive = instructor.IsActive;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar el instructor.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.Specialty))
+        {
+            errorMessage = "Nombre y especialidad son obligatorios.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var request = new UpdateInstructorRequest(model.FullName.Trim(), model.Specialty.Trim(), model.Bio, model.PhotoUrl, model.IsActive);
+        var response = await AdminApi.UpdateInstructorAsync(InstructorId, request);
+
+        isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/instructors");
+        }
+        else
+        {
+            errorMessage = $"Error al guardar (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private sealed class InstructorEditModel
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Specialty { get; set; } = string.Empty;
+        public string? Bio { get; set; }
+        public string? PhotoUrl { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

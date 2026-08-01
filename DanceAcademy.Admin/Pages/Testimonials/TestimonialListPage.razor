@@ -1,0 +1,94 @@
+@page "/testimonials"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+
+<PageTitle>Testimonios — Dance Academy Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Testimonios</h4>
+</div>
+<p class="text-muted small mb-3">
+    Los testimonios los envían los propios estudiantes desde "Ingresar tu comentario" en /testimonios.
+    Aquí solo se moderan: ver y aprobar o rechazar su publicación — no se pueden crear ni editar desde el panel.
+</p>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (testimonials is not null)
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Curso</th>
+                        <th>Rating</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var testimonial in testimonials)
+                    {
+                        <tr>
+                            <td class="align-middle">@testimonial.StudentName</td>
+                            <td class="align-middle">@(testimonial.CourseTitle ?? "—")</td>
+                            <td class="align-middle">@(new string('★', testimonial.Rating))</td>
+                            <td class="align-middle">
+                                @if (testimonial.IsPublished)
+                                {
+                                    <span class="badge bg-success">Publicado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Oculto</span>
+                                }
+                            </td>
+                            <td class="align-middle text-end">
+                                <a class="btn btn-sm btn-outline-secondary" href="/testimonials/@testimonial.Id">
+                                    Ver
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!testimonials.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                Todavía no hay testimonios enviados por estudiantes.
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<AdminTestimonialDto>? testimonials;
+    private string? errorMessage;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            testimonials = await AdminApi.GetTestimonialsAsync();
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de testimonios.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

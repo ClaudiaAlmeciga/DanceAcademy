@@ -1,0 +1,111 @@
+@page "/contacto"
+@using System.ComponentModel.DataAnnotations
+
+@inject NavigationManager Nav
+
+<PageTitle>Contacto — Dance Academy</PageTitle>
+
+<section class="da-hero" style="padding: 4rem 1rem;">
+    <div class="container text-center">
+        <h1 class="da-hero-title" style="font-size: 2.25rem;">¿Tienes una pregunta?</h1>
+        <p class="da-hero-subtitle">
+            Escríbenos y te respondemos lo antes posible.
+        </p>
+    </div>
+</section>
+
+<section class="da-features">
+    <div class="container" style="max-width: 640px;">
+        @if (wasSent)
+        {
+            <div class="alert alert-success text-center">
+                Se abrió tu cliente de correo con el mensaje listo para enviar. Si no se abrió,
+                escríbenos directamente a <a href="mailto:@ContactEmail">@ContactEmail</a>.
+            </div>
+        }
+
+        <div class="da-feature-card mb-4">
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">Nombre</label>
+                    <InputText class="form-control" @bind-Value="model.Name" placeholder="Tu nombre" />
+                    <ValidationMessage For="@(() => model.Name)" class="text-danger small" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">Email</label>
+                    <InputText type="email" class="form-control" @bind-Value="model.Email" placeholder="tu@email.com" />
+                    <ValidationMessage For="@(() => model.Email)" class="text-danger small" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">Mensaje</label>
+                    <InputTextArea class="form-control" rows="5" @bind-Value="model.Message" placeholder="Cuéntanos en qué te podemos ayudar" />
+                    <ValidationMessage For="@(() => model.Message)" class="text-danger small" />
+                </div>
+
+                @if (errorMessage is not null)
+                {
+                    <div class="alert alert-danger py-2 small">@errorMessage</div>
+                }
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                    Enviar mensaje
+                </button>
+            </EditForm>
+        </div>
+
+        <div class="text-center text-muted small">
+            <p class="mb-1">También puedes escribirnos directamente:</p>
+            <p class="mb-1">
+                <a href="mailto:@ContactEmail">@ContactEmail</a>
+            </p>
+            <p class="mb-0">
+                <a href="https://wa.me/@WhatsAppNumber" target="_blank" rel="noopener noreferrer">
+                    WhatsApp: @WhatsAppDisplay
+                </a>
+            </p>
+        </div>
+    </div>
+</section>
+
+@code {
+    // Datos de contacto fijos — sin backend de tickets (ver ROADMAP.md, sección M4).
+    private const string ContactEmail = "milena.almeciga@gmail.com";
+    private const string WhatsAppNumber = "573003134090";
+    private const string WhatsAppDisplay = "+57 300 313 4090";
+
+    private readonly ContactModel model = new();
+    private string? errorMessage;
+    private bool wasSent;
+
+    private Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+
+        var subject = Uri.EscapeDataString($"Contacto desde la web — {model.Name}");
+        var body = Uri.EscapeDataString($"{model.Message}\n\n— {model.Name} ({model.Email})");
+        var mailtoUri = $"mailto:{ContactEmail}?subject={subject}&body={body}";
+
+        Nav.NavigateTo(mailtoUri, forceLoad: true);
+        wasSent = true;
+
+        return Task.CompletedTask;
+    }
+
+    private sealed class ContactModel
+    {
+        [Required(ErrorMessage = "Ingresa tu nombre.")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Ingresa tu email.")]
+        [EmailAddress(ErrorMessage = "Ingresa un email válido.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Escribe tu mensaje.")]
+        [MinLength(10, ErrorMessage = "El mensaje debe tener al menos 10 caracteres.")]
+        public string Message { get; set; } = string.Empty;
+    }
+}

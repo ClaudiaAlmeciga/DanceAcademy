@@ -1,0 +1,125 @@
+@page "/instructors"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+
+<PageTitle>Instructores — Dance Academy Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Instructores</h4>
+    <a class="btn btn-primary btn-sm" href="/instructors/new">+ Nuevo instructor</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (instructors is not null)
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Especialidad</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var instructor in instructors)
+                    {
+                        <tr>
+                            <td class="align-middle">@instructor.FullName</td>
+                            <td class="align-middle">@instructor.Specialty</td>
+                            <td class="align-middle">
+                                @if (instructor.IsActive)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </td>
+                            <td class="align-middle text-end">
+                                @if (confirmingInstructorId == instructor.Id)
+                                {
+                                    <span class="small text-danger me-2">¿Eliminar?</span>
+                                    <button class="btn btn-sm btn-danger me-1"
+                                            @onclick="() => HandleDeleteInstructorAsync(instructor.Id)"
+                                            disabled="@isBusy">
+                                        Sí
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                            @onclick="() => confirmingInstructorId = null">
+                                        No
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-sm btn-outline-secondary me-1" href="/instructors/@instructor.Id/edit">
+                                        Editar
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => confirmingInstructorId = instructor.Id"
+                                            disabled="@isBusy">
+                                        Eliminar
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!instructors.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                No hay instructores. <a href="/instructors/new">Crea el primero.</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<AdminInstructorDto>? instructors;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isBusy;
+    private Guid? confirmingInstructorId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            instructors = await AdminApi.GetInstructorsAsync();
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de instructores.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleDeleteInstructorAsync(Guid instructorId)
+    {
+        isBusy = true;
+        confirmingInstructorId = null;
+        var response = await AdminApi.DeleteInstructorAsync(instructorId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            instructors = instructors?.Where(i => i.Id != instructorId).ToList();
+        else
+            errorMessage = "No se pudo eliminar el instructor.";
+    }
+}

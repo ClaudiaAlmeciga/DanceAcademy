@@ -18,7 +18,7 @@ else if (errorMessage is not null)
 else
 {
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Estudiantes</div>
@@ -26,7 +26,7 @@ else
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Cursos publicados</div>
@@ -34,7 +34,7 @@ else
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Inscripciones totales</div>
@@ -42,11 +42,27 @@ else
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Avance promedio</div>
                     <div class="fs-3 fw-bold">@(summary?.AverageCompletionRate.ToString("0.#"))%</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Instructores activos</div>
+                    <div class="fs-3 fw-bold">@summary?.TotalInstructors</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Testimonios publicados</div>
+                    <div class="fs-3 fw-bold">@summary?.TotalTestimonials</div>
                 </div>
             </div>
         </div>

@@ -1,0 +1,60 @@
+@page "/certificados/{CourseId:guid}"
+@attribute [Authorize]
+
+@inject PublicApiService Api
+
+<PageTitle>Certificado — Dance Academy</PageTitle>
+
+<div class="container py-5" style="max-width: 720px;">
+    <div class="mb-3 no-print">
+        <a href="/mis-cursos" class="text-decoration-none text-muted small">← Volver a Mis Cursos</a>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (certificate is null)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Todavía no tienes un certificado para este curso. ¡Completa todas las lecciones para obtenerlo!</p>
+        </div>
+    }
+    else
+    {
+        <div class="da-certificate">
+            <div class="da-certificate-seal">DA</div>
+            <p class="text-uppercase small text-muted mb-1" style="letter-spacing: .1em;">Certificado de finalización</p>
+            <h2 class="fw-bold mb-3">@certificate.CourseTitle</h2>
+            <p class="text-muted mb-4">
+                Otorgado por completar satisfactoriamente todas las lecciones del curso en Dance Academy.
+            </p>
+            <p class="fw-semibold mb-1">Emitido el @certificate.IssuedAt.ToLocalTime().ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</p>
+            <p class="text-muted small">Código de verificación: <code>@certificate.VerificationCode</code></p>
+        </div>
+
+        <div class="text-center mt-4 no-print">
+            <button class="btn btn-primary" @onclick="Print">Descargar / imprimir</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid CourseId { get; set; }
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private CertificateDto? certificate;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        certificate = await Api.GetMyCertificateForCourseAsync(CourseId);
+        isLoading = false;
+    }
+
+    private Task Print() => JS.InvokeVoidAsync("print").AsTask();
+}

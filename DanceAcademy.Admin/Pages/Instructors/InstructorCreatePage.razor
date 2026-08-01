@@ -1,0 +1,87 @@
+@page "/instructors/new"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Nuevo instructor — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/instructors" class="text-decoration-none text-muted small">← Volver a instructores</a>
+</div>
+
+<div class="card shadow-sm" style="max-width: 520px;">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Nuevo instructor</h5>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Nombre completo <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.FullName" placeholder="Ej: Laura Gómez" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Especialidad <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Specialty" placeholder="Ej: Salsa y bachata" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Biografía</label>
+                <textarea class="form-control" rows="4" @bind="model.Bio"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">URL de foto</label>
+                <input class="form-control" @bind="model.PhotoUrl" placeholder="https://..." />
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @(isLoading ? "Guardando..." : "Crear instructor")
+                </button>
+                <a href="/instructors" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly InstructorCreateModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.Specialty))
+        {
+            errorMessage = "Nombre y especialidad son obligatorios.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var request = new CreateInstructorRequest(model.FullName.Trim(), model.Specialty.Trim(), model.Bio, model.PhotoUrl);
+        var response = await AdminApi.CreateInstructorAsync(request);
+
+        isLoading = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/instructors");
+        }
+        else
+        {
+            errorMessage = $"Error al crear el instructor (HTTP {(int)response.StatusCode}). Intenta de nuevo.";
+        }
+    }
+
+    private sealed class InstructorCreateModel
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Specialty { get; set; } = string.Empty;
+        public string? Bio { get; set; }
+        public string? PhotoUrl { get; set; }
+    }
+}

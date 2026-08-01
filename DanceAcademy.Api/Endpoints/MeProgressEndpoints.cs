@@ -108,6 +108,8 @@ public static class MeProgressEndpoints
 
             await db.SaveChangesAsync(ct);
 
+            await IssueCertificateIfCourseCompletedAsync(db, userId, lessonInfo.CourseId, ct);
+
             var completedProgressDto = new LessonProgressDto(lessonId, lessonProgress.IsCompleted, lessonProgress.CompletedAt);
             return Results.Ok(completedProgressDto);
         })
@@ -241,5 +243,36 @@ public static class MeProgressEndpoints
         .WithName("GetMyCourseLessonProgress");
 
         return app;
+    }
+
+    /// <summary>
+    /// Emite el certificado de finalización si el usuario ya completó el 100% de las
+    /// lecciones publicadas del curso y aún no tiene un certificado emitido para él.
+    /// </summary>
+    private static async Task IssueCertificateIfCourseCompletedAsync(AppDbContext db, Guid userId, Guid courseId, CancellationToken ct)
+    {
+        var alreadyIssued = await db.Certificates.AsNoTracking().AnyAsync(c => c.UserId == userId && c.CourseId == courseId, ct);
+        if (alreadyIssued)
+            return;
+
+        var publishedLessonIds = await (
+            from l in db.Lessons.AsNoTracking()
+            join m in db.Modules.AsNoTracking() on l.ModuleId equals m.Id
+            where m.CourseId == courseId && l.IsPublished && m.IsPublished
+            select l.Id)
+            .ToListAsync(ct);
+
+        if (publishedLessonIds.Count == 0)
+            return;
+
+        var completedCount = await db.LessonProgresses
+            .AsNoTracking()
+            .CountAsync(p => p.UserId == userId && p.IsCompleted && publishedLessonIds.Contains(p.LessonId), ct);
+
+        if (completedCount < publishedLessonIds.Count)
+            return;
+
+        db.Certificates.Add(new Certificate(userId, courseId));
+        await db.SaveChangesAsync(ct);
     }
 }

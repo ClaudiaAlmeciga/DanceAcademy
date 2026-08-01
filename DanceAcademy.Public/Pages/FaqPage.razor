@@ -1,0 +1,71 @@
+@page "/faq"
+
+@inject PublicApiService Api
+
+<PageTitle>Preguntas frecuentes — Dance Academy</PageTitle>
+
+<div class="container py-5" style="max-width: 780px;">
+    <h2 class="fw-bold mb-2">Preguntas frecuentes</h2>
+    <p class="text-muted mb-4">Si no encuentras tu respuesta aquí, escríbenos.</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (groupedItems is null || groupedItems.Count == 0)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Todavía no hay preguntas frecuentes publicadas.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var group in groupedItems)
+        {
+            <h6 class="text-uppercase text-muted small fw-bold mt-4 mb-2">@group.Key</h6>
+            <div class="accordion mb-3" id="faqAccordion@(group.Key.GetHashCode())">
+                @foreach (var item in group)
+                {
+                    var headingId = $"heading-{item.Id}";
+                    var collapseId = $"collapse-{item.Id}";
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="@headingId">
+                            <button class="accordion-button collapsed" type="button"
+                                    @onclick="() => Toggle(item.Id)">
+                                @item.Question
+                            </button>
+                        </h2>
+                        <div class="accordion-collapse collapse @(openItemId == item.Id ? "show" : "")">
+                            <div class="accordion-body text-muted">
+                                @item.Answer
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<FaqItemDto>? items;
+    private ILookup<string, FaqItemDto>? groupedItems;
+    private Guid? openItemId;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        items = await Api.GetFaqItemsAsync();
+        groupedItems = items?.ToLookup(i => i.Category);
+        isLoading = false;
+    }
+
+    private void Toggle(Guid itemId)
+    {
+        openItemId = openItemId == itemId ? null : itemId;
+    }
+}

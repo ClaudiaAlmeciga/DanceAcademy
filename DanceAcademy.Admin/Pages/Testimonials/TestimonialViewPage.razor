@@ -1,0 +1,121 @@
+@page "/testimonials/{testimonialId:guid}"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Ver testimonio — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/testimonials" class="text-decoration-none text-muted small">← Volver a testimonios</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else if (testimonial is not null)
+{
+    <div class="card shadow-sm" style="max-width: 560px;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h5 class="card-title mb-1">@testimonial.StudentName</h5>
+                    @if (!string.IsNullOrWhiteSpace(testimonial.CourseTitle))
+                    {
+                        <div class="text-muted small">@testimonial.CourseTitle</div>
+                    }
+                </div>
+                @if (testimonial.IsPublished)
+                {
+                    <span class="badge bg-success">Publicado</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">Pendiente</span>
+                }
+            </div>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <div class="mb-3 text-warning">@(new string('★', testimonial.Rating))@(new string('☆', 5 - testimonial.Rating))</div>
+
+            <p class="mb-4">"@testimonial.Content"</p>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-success" disabled="@(isBusy || testimonial.IsPublished)" @onclick="HandlePublishAsync">
+                    Aprobar
+                </button>
+                <button class="btn btn-outline-danger" disabled="@(isBusy || !testimonial.IsPublished)" @onclick="HandleUnpublishAsync">
+                    Reprobar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid TestimonialId { get; set; }
+
+    private AdminTestimonialDto? testimonial;
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTestimonialAsync();
+    }
+
+    private async Task LoadTestimonialAsync()
+    {
+        try
+        {
+            testimonial = await AdminApi.GetTestimonialDetailAsync(TestimonialId);
+            if (testimonial is null)
+                loadError = "Testimonio no encontrado.";
+        }
+        catch
+        {
+            loadError = "No se pudo cargar el testimonio.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandlePublishAsync()
+    {
+        isBusy = true;
+        errorMessage = null;
+        var response = await AdminApi.PublishTestimonialAsync(TestimonialId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            await LoadTestimonialAsync();
+        else
+            errorMessage = "No se pudo aprobar el testimonio.";
+    }
+
+    private async Task HandleUnpublishAsync()
+    {
+        isBusy = true;
+        errorMessage = null;
+        var response = await AdminApi.UnpublishTestimonialAsync(TestimonialId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            await LoadTestimonialAsync();
+        else
+            errorMessage = "No se pudo rechazar el testimonio.";
+    }
+}

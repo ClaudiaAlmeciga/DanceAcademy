@@ -139,6 +139,24 @@ public class PublicApiService(
             : (false, "No se pudo guardar el perfil. Intenta de nuevo.");
     }
 
+    public async Task<(bool Success, string? Error)> ChangePasswordAsync(
+        string currentPassword, string newPassword, CancellationToken ct = default)
+    {
+        var response = await Client.PutAsJsonAsync("/me/password",
+            new ChangePasswordRequest(currentPassword, newPassword), ct);
+
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            var body = await response.Content.ReadFromJsonAsync<ErrorResponse>(cancellationToken: ct);
+            return (false, body?.Error ?? "No se pudo actualizar la contraseña.");
+        }
+
+        return (false, "No se pudo actualizar la contraseña. Intenta de nuevo.");
+    }
+
     public async Task LogoutAsync()
     {
         await tokenStorage.RemoveAsync();
@@ -225,6 +243,81 @@ public class PublicApiService(
             return null;
 
         return await response.Content.ReadFromJsonAsync<List<LessonProgressListItemDto>>(cancellationToken: ct);
+    }
+
+    public async Task<List<InstructorDto>?> GetInstructorsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/public/instructors", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<InstructorDto>>(cancellationToken: ct);
+    }
+
+    public async Task<List<TestimonialDto>?> GetTestimonialsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/public/testimonials", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<TestimonialDto>>(cancellationToken: ct);
+    }
+
+    public async Task<List<MyTestimonialDto>?> GetMyTestimonialsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/me/testimonials", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<MyTestimonialDto>>(cancellationToken: ct);
+    }
+
+    public async Task<(bool Success, string? Error)> SubmitTestimonialAsync(string content, int rating, Guid? courseId, CancellationToken ct = default)
+    {
+        var response = await Client.PostAsJsonAsync("/me/testimonials", new CreateTestimonialSelfRequest(content, rating, courseId), ct);
+
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<MessageResponse>(cancellationToken: ct);
+            if (body?.Message is not null)
+                return (false, body.Message);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // El cuerpo de la respuesta de error no era JSON — se usa el mensaje genérico.
+        }
+
+        return (false, "No se pudo enviar tu comentario. Intenta de nuevo.");
+    }
+
+    public async Task<List<FaqItemDto>?> GetFaqItemsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/public/faq", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<FaqItemDto>>(cancellationToken: ct);
+    }
+
+    public async Task<List<CertificateDto>?> GetMyCertificatesAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/me/certificates", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<CertificateDto>>(cancellationToken: ct);
+    }
+
+    public async Task<CertificateDto?> GetMyCertificateForCourseAsync(Guid courseId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/me/certificates/{courseId}", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<CertificateDto>(cancellationToken: ct);
     }
 
     private sealed record TokenResponse(
