@@ -20,6 +20,25 @@ html, body {
     --da-accent-gold-dark: #A67F1D;
 }
 
+/* ===== BREADCRUMB ===== */
+.da-breadcrumb .breadcrumb {
+    font-size: 0.82rem;
+}
+.da-breadcrumb .breadcrumb-item a {
+    color: #6b7280;
+    text-decoration: none;
+}
+.da-breadcrumb .breadcrumb-item a:hover {
+    color: var(--da-primary);
+    text-decoration: underline;
+}
+.da-breadcrumb .breadcrumb-item.active {
+    color: #9ca3af;
+}
+.da-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+    color: #d1d5db;
+}
+
 /* ===== NAVBAR ===== */
 .da-navbar {
     background: #fff;

@@ -6,6 +6,7 @@
 <PageTitle>Mi Perfil — Dance Academy</PageTitle>
 
 <div class="container py-5" style="max-width: 480px;">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Mi Perfil", null) })" />
     <h2 class="fw-bold mb-4">Mi Perfil</h2>
 
     @if (isLoading)

@@ -6,6 +6,7 @@
 <PageTitle>Mis Cursos — Dance Academy</PageTitle>
 
 <div class="container py-5">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Mis Cursos", null) })" />
     <h2 class="fw-bold mb-4">Mis cursos</h2>
 
     @if (isLoading)

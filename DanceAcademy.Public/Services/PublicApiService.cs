@@ -245,6 +245,15 @@ public class PublicApiService(
         return await response.Content.ReadFromJsonAsync<List<LessonProgressListItemDto>>(cancellationToken: ct);
     }
 
+    public async Task<LevelReadinessDto?> GetLevelReadinessAsync(Guid courseId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/me/progress/courses/{courseId}/level-readiness", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<LevelReadinessDto>(cancellationToken: ct);
+    }
+
     public async Task<List<InstructorDto>?> GetInstructorsAsync(CancellationToken ct = default)
     {
         var response = await Client.GetAsync("/public/instructors", ct);

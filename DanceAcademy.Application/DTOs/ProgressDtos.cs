@@ -34,3 +34,14 @@ public sealed record LessonProgressListItemDto(
     int Order,
     bool IsCompleted
 );
+
+/// <summary>
+/// Indica si el usuario autenticado cumple la recomendación de continuidad de niveles
+/// (haber completado al 100% un curso del nivel inmediatamente anterior) antes de ver
+/// o inscribirse en un curso de un nivel superior. <c>PreviousLevelName</c> es null
+/// cuando el curso ya es del nivel más bajo (no hay nivel anterior que exigir).
+/// </summary>
+public sealed record LevelReadinessDto(
+    bool MeetsRecommendation,
+    string? PreviousLevelName
+);

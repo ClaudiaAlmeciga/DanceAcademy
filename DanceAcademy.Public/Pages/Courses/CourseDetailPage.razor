@@ -5,9 +5,7 @@
 <PageTitle>@(course?.Title ?? "Curso") — Dance Academy</PageTitle>
 
 <div class="container py-5">
-    <div class="mb-3">
-        <a href="/cursos" class="text-decoration-none text-muted small">← Volver al catálogo</a>
-    </div>
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Cursos", "/cursos"), new(course?.Title ?? "Curso", null) })" />
 
     @if (isLoading)
     {
@@ -39,6 +37,16 @@
                 Incluido en: @string.Join(", ", course.SubscriptionPlans.Select(p => p.Name))
                 — <a href="/planes">ver planes</a>
             </p>
+        }
+
+        @if (levelReadiness is { MeetsRecommendation: false })
+        {
+            <div class="alert alert-warning py-2 small mb-3">
+                💡 Este curso es de nivel <strong>@course.LevelName</strong> y lo más recomendable es seguir la
+                continuidad de niveles: todavía no has completado un curso de nivel
+                <strong>@levelReadiness.PreviousLevelName</strong>. Puedes inscribirte igual, pero te
+                recomendamos empezar por ahí primero.
+            </div>
         }
 
         <div class="mb-4">
@@ -138,6 +146,7 @@
     private CourseDetailDto? course;
     private CourseProgressDto? progress;
     private HashSet<Guid> completedLessonIds = [];
+    private LevelReadinessDto? levelReadiness;
     private bool isLoading = true;
     private bool isAuthenticated;
     private bool isEnrolled;
@@ -157,6 +166,10 @@
 
         if (isAuthenticated)
         {
+            // Aviso informativo de continuidad de niveles: se muestra tanto antes de
+            // inscribirse como ya inscrito, así que se carga sin importar isEnrolled.
+            levelReadiness = await Api.GetLevelReadinessAsync(CourseId);
+
             var myEnrollments = await Api.GetMyEnrollmentsAsync();
             isEnrolled = myEnrollments?.Any(e => e.CourseId == CourseId) ?? false;
 
