@@ -1,0 +1,66 @@
+@page "/nosotros"
+
+<PageTitle>Sobre Nosotros — Dance Academy</PageTitle>
+
+<div class="container pt-4 pb-0">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Sobre Nosotros", null) })" />
+</div>
+
+<section class="da-hero" style="padding: 4rem 1rem;">
+    <div class="container text-center">
+        <h1 class="da-hero-title" style="font-size: 2.25rem;">Bailar no es solo un curso, es un espacio propio</h1>
+        <p class="da-hero-subtitle">
+            Nacimos para que aprender a bailar no dependa de un horario fijo,<br />
+            de vencer la pena en una clase presencial, ni de tener experiencia previa.
+        </p>
+    </div>
+</section>
+
+<section class="da-features">
+    <div class="container" style="max-width: 760px;">
+        <p class="fs-5 text-muted">
+            Dance Academy empezó como una idea simple: la mayoría de personas que quieren aprender a bailar
+            no tienen tiempo para un horario fijo de academia, y muchas sienten pena de dar el primer paso
+            frente a otros. Construimos una plataforma donde cada estudiante avanza a su propio ritmo,
+            puede pausar y retomar cuando quiera, y ve su progreso reflejado lección a lección.
+        </p>
+        <p class="fs-5 text-muted mb-0">
+            Hoy trabajamos con instructores especializados en distintos estilos —desde salsa y bachata
+            hasta ballet— y con estudiantes que van desde quien nunca ha bailado hasta quien ya baila
+            socialmente y quiere estructurar su progreso.
+        </p>
+    </div>
+</section>
+
+<section class="da-cta">
+    <div class="container">
+        <div class="row g-4 justify-content-center text-center">
+            <div class="col-md-4">
+                <div class="da-feature-card">
+                    <div class="da-feature-icon">◆</div>
+                    <h5>Nuestra misión</h5>
+                    <p class="text-muted mb-0">Hacer que aprender a bailar sea accesible, sin pena y sin horarios rígidos.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="da-feature-card">
+                    <div class="da-feature-icon">◆</div>
+                    <h5>Cómo enseñamos</h5>
+                    <p class="text-muted mb-0">Cursos por niveles, con video y contenido escrito, y avance que se guarda automáticamente.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="da-feature-card">
+                    <div class="da-feature-icon">◆</div>
+                    <h5>Para quién es</h5>
+                    <p class="text-muted mb-0">Desde quien nunca ha bailado hasta quien quiere perfeccionar un estilo específico.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="/instructores" class="btn btn-primary btn-lg me-2">Conoce a los instructores</a>
+            <a href="/cursos" class="btn btn-outline-primary btn-lg">Ver cursos</a>
+        </div>
+    </div>
+</section>

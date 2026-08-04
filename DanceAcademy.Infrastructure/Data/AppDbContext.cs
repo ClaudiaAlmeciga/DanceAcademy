@@ -15,6 +15,10 @@ public sealed class AppDbContext : DbContext
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<LessonProgress> LessonProgresses => Set<LessonProgress>();
+    public DbSet<Instructor> Instructors => Set<Instructor>();
+    public DbSet<Testimonial> Testimonials => Set<Testimonial>();
+    public DbSet<FaqItem> FaqItems => Set<FaqItem>();
+    public DbSet<Certificate> Certificates => Set<Certificate>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

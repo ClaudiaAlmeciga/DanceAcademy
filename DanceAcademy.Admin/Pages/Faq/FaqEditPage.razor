@@ -1,0 +1,133 @@
+@page "/faq/{faqItemId:guid}/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Editar pregunta — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/faq" class="text-decoration-none text-muted small">← Volver a FAQ</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <div class="card shadow-sm" style="max-width: 520px;">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Editar pregunta frecuente</h5>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label">Pregunta <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Question" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Respuesta <span class="text-danger">*</span></label>
+                    <textarea class="form-control" rows="4" @bind="model.Answer"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Category" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Orden <span class="text-danger">*</span></label>
+                    <input type="number" min="1" class="form-control" @bind="model.Order" />
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="isActive" @bind="model.IsActive" />
+                    <label class="form-check-label" for="isActive">Activa</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                    <a href="/faq" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid FaqItemId { get; set; }
+
+    private readonly FaqEditModel model = new();
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var item = await AdminApi.GetFaqItemDetailAsync(FaqItemId);
+            if (item is null)
+            {
+                loadError = "Pregunta frecuente no encontrada.";
+                return;
+            }
+            model.Question = item.Question;
+            model.Answer = item.Answer;
+            model.Category = item.Category;
+            model.Order = item.Order;
+            model.IsActive = item.IsActive;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar la pregunta.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Question) || string.IsNullOrWhiteSpace(model.Answer) || string.IsNullOrWhiteSpace(model.Category))
+        {
+            errorMessage = "Pregunta, respuesta y categoría son obligatorias.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var request = new UpdateFaqItemRequest(model.Question.Trim(), model.Answer.Trim(), model.Category.Trim(), model.Order, model.IsActive);
+        var response = await AdminApi.UpdateFaqItemAsync(FaqItemId, request);
+
+        isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/faq");
+        }
+        else
+        {
+            errorMessage = $"Error al guardar (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private sealed class FaqEditModel
+    {
+        public string Question { get; set; } = string.Empty;
+        public string Answer { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public int Order { get; set; } = 1;
+        public bool IsActive { get; set; } = true;
+    }
+}

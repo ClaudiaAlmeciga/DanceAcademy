@@ -6,6 +6,7 @@
 <PageTitle>Mis Cursos — Dance Academy</PageTitle>
 
 <div class="container py-5">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Mis Cursos", null) })" />
     <h2 class="fw-bold mb-4">Mis cursos</h2>
 
     @if (isLoading)
@@ -68,8 +69,12 @@
                                 </div>
                             }
                         </div>
-                        <div class="da-course-card-footer">
+                        <div class="da-course-card-footer d-flex flex-column gap-2">
                             <a href="/cursos/@enrollment.CourseId" class="btn btn-primary btn-sm w-100">Ir al curso →</a>
+                            @if (courseProgress is not null && courseProgress.ProgressPercentage >= 100)
+                            {
+                                <a href="/certificados/@enrollment.CourseId" class="btn btn-outline-primary btn-sm w-100">🎓 Ver certificado</a>
+                            }
                         </div>
                     </div>
                 </div>

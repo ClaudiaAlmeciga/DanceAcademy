@@ -108,6 +108,8 @@ public static class MeProgressEndpoints
 
             await db.SaveChangesAsync(ct);
 
+            await IssueCertificateIfCourseCompletedAsync(db, userId, lessonInfo.CourseId, ct);
+
             var completedProgressDto = new LessonProgressDto(lessonId, lessonProgress.IsCompleted, lessonProgress.CompletedAt);
             return Results.Ok(completedProgressDto);
         })
@@ -240,6 +242,114 @@ public static class MeProgressEndpoints
         })
         .WithName("GetMyCourseLessonProgress");
 
+        // GET /me/progress/courses/{courseId}/level-readiness — ¿el usuario completó un curso
+        // del nivel anterior antes de ver/inscribirse en este? No exige estar inscrito en
+        // courseId (a propósito: la advertencia debe verse también antes de inscribirse).
+        group.MapGet("/courses/{courseId:guid}/level-readiness", async (
+            [FromRoute] Guid courseId,
+            ClaimsPrincipal principal,
+            AppDbContext db,
+            CancellationToken ct) =>
+        {
+            if (courseId == Guid.Empty)
+                return Results.BadRequest(new { message = "courseId inválido." });
+
+            var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var targetLevel = await (
+                from c in db.Courses.AsNoTracking()
+                join l in db.Levels.AsNoTracking() on c.LevelId equals l.Id
+                where c.Id == courseId
+                select new { l.Order })
+                .SingleOrDefaultAsync(ct);
+
+            if (targetLevel is null)
+                return Results.NotFound(new { message = "Curso no encontrado." });
+
+            var previousLevel = await db.Levels
+                .AsNoTracking()
+                .Where(l => l.Order == targetLevel.Order - 1)
+                .Select(l => new { l.Id, l.Name })
+                .SingleOrDefaultAsync(ct);
+
+            // Nivel más bajo (o sin nivel anterior configurado) — nada que recomendar.
+            if (previousLevel is null)
+                return Results.Ok(new LevelReadinessDto(true, null));
+
+            var previousLevelCourseIds = await db.Courses
+                .AsNoTracking()
+                .Where(c => c.LevelId == previousLevel.Id)
+                .Select(c => c.Id)
+                .ToListAsync(ct);
+
+            if (previousLevelCourseIds.Count == 0)
+                return Results.Ok(new LevelReadinessDto(true, previousLevel.Name));
+
+            var enrolledPreviousLevelCourseIds = await db.Enrollments
+                .AsNoTracking()
+                .Where(e => e.UserId == userId && previousLevelCourseIds.Contains(e.CourseId))
+                .Select(e => e.CourseId)
+                .ToListAsync(ct);
+
+            var meetsRecommendation = false;
+            foreach (var enrolledCourseId in enrolledPreviousLevelCourseIds)
+            {
+                var publishedLessonIds = await (
+                    from l in db.Lessons.AsNoTracking()
+                    join m in db.Modules.AsNoTracking() on l.ModuleId equals m.Id
+                    where m.CourseId == enrolledCourseId && l.IsPublished && m.IsPublished
+                    select l.Id)
+                    .ToListAsync(ct);
+
+                if (publishedLessonIds.Count == 0)
+                    continue;
+
+                var completedCount = await db.LessonProgresses
+                    .AsNoTracking()
+                    .CountAsync(p => p.UserId == userId && p.IsCompleted && publishedLessonIds.Contains(p.LessonId), ct);
+
+                if (completedCount >= publishedLessonIds.Count)
+                {
+                    meetsRecommendation = true;
+                    break;
+                }
+            }
+
+            return Results.Ok(new LevelReadinessDto(meetsRecommendation, previousLevel.Name));
+        })
+        .WithName("GetMyLevelReadiness");
+
         return app;
+    }
+
+    /// <summary>
+    /// Emite el certificado de finalización si el usuario ya completó el 100% de las
+    /// lecciones publicadas del curso y aún no tiene un certificado emitido para él.
+    /// </summary>
+    private static async Task IssueCertificateIfCourseCompletedAsync(AppDbContext db, Guid userId, Guid courseId, CancellationToken ct)
+    {
+        var alreadyIssued = await db.Certificates.AsNoTracking().AnyAsync(c => c.UserId == userId && c.CourseId == courseId, ct);
+        if (alreadyIssued)
+            return;
+
+        var publishedLessonIds = await (
+            from l in db.Lessons.AsNoTracking()
+            join m in db.Modules.AsNoTracking() on l.ModuleId equals m.Id
+            where m.CourseId == courseId && l.IsPublished && m.IsPublished
+            select l.Id)
+            .ToListAsync(ct);
+
+        if (publishedLessonIds.Count == 0)
+            return;
+
+        var completedCount = await db.LessonProgresses
+            .AsNoTracking()
+            .CountAsync(p => p.UserId == userId && p.IsCompleted && publishedLessonIds.Contains(p.LessonId), ct);
+
+        if (completedCount < publishedLessonIds.Count)
+            return;
+
+        db.Certificates.Add(new Certificate(userId, courseId));
+        await db.SaveChangesAsync(ct);
     }
 }

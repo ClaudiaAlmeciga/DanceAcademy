@@ -1,0 +1,102 @@
+@page "/cuenta"
+@attribute [Authorize]
+
+@inject PublicApiService Api
+
+<PageTitle>Mi Cuenta — Dance Academy</PageTitle>
+
+<div class="container py-5" style="max-width: 480px;">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Mi Cuenta", null) })" />
+    <h2 class="fw-bold mb-1">Mi Cuenta</h2>
+    <p class="text-muted small mb-4">Cambia la contraseña de tu cuenta.</p>
+
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-danger py-2 small">@errorMessage</div>
+    }
+    @if (successMessage is not null)
+    {
+        <div class="alert alert-success py-2 small">@successMessage</div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">Contraseña actual</label>
+                    <input type="password" class="form-control" @bind="model.CurrentPassword"
+                           autocomplete="current-password" placeholder="Tu contraseña actual" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">Nueva contraseña</label>
+                    <input type="password" class="form-control" @bind="model.NewPassword"
+                           autocomplete="new-password" placeholder="Mínimo 8 caracteres" />
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-medium small">Confirmar nueva contraseña</label>
+                    <input type="password" class="form-control" @bind="model.ConfirmPassword"
+                           autocomplete="new-password" placeholder="Repite la nueva contraseña" />
+                </div>
+                <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                    @(isSaving ? "Guardando..." : "Cambiar contraseña")
+                </button>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly ChangePasswordModel model = new();
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isSaving;
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(model.CurrentPassword))
+        {
+            errorMessage = "Ingresa tu contraseña actual.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword.Length < 8)
+        {
+            errorMessage = "La nueva contraseña debe tener al menos 8 caracteres.";
+            return;
+        }
+
+        if (model.NewPassword != model.ConfirmPassword)
+        {
+            errorMessage = "Las contraseñas nuevas no coinciden.";
+            return;
+        }
+
+        isSaving = true;
+
+        var (success, error) = await Api.ChangePasswordAsync(model.CurrentPassword, model.NewPassword);
+
+        isSaving = false;
+
+        if (success)
+        {
+            successMessage = "Contraseña actualizada correctamente.";
+            model.CurrentPassword = string.Empty;
+            model.NewPassword = string.Empty;
+            model.ConfirmPassword = string.Empty;
+        }
+        else
+        {
+            errorMessage = error;
+        }
+    }
+
+    private sealed class ChangePasswordModel
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

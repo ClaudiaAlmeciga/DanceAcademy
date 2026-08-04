@@ -1,0 +1,216 @@
+@page "/testimonios"
+
+@inject PublicApiService Api
+
+<PageTitle>Testimonios — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Testimonios", null) })" />
+    <h2 class="fw-bold mb-2">Lo que dicen nuestros estudiantes</h2>
+    <p class="text-muted mb-4">Historias reales de personas que empezaron desde cero, o que retomaron el baile después de años.</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (testimonials is null || testimonials.Count == 0)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Todavía no hay testimonios publicados.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var testimonial in testimonials)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="da-course-card">
+                        <div class="da-course-card-body">
+                            <div class="mb-2 text-warning">@(new string('★', testimonial.Rating))@(new string('☆', 5 - testimonial.Rating))</div>
+                            <p class="da-course-description text-muted" style="-webkit-line-clamp: 6;">"@testimonial.Content"</p>
+                        </div>
+                        <div class="da-course-card-footer d-flex align-items-center gap-2">
+                            <div class="da-instructor-avatar da-instructor-avatar-sm">
+                                @if (!string.IsNullOrWhiteSpace(testimonial.PhotoUrl))
+                                {
+                                    <img src="@testimonial.PhotoUrl" alt="@testimonial.StudentName" />
+                                }
+                                else
+                                {
+                                    <span>@testimonial.StudentName[..1]</span>
+                                }
+                            </div>
+                            <div>
+                                <div class="fw-semibold small">@testimonial.StudentName</div>
+                                @if (!string.IsNullOrWhiteSpace(testimonial.CourseTitle))
+                                {
+                                    <div class="text-muted small">@testimonial.CourseTitle</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <hr class="my-5" />
+
+    <div class="mx-auto" style="max-width: 640px;">
+            <h4 class="fw-bold mb-1">Ingresar tu comentario</h4>
+            <p class="text-muted small mb-4">Cuéntale a otros estudiantes tu experiencia. Se publica luego de una revisión rápida.</p>
+
+            <AuthorizeView Context="authContext">
+                <Authorized>
+                    @if (successMessage is not null)
+                    {
+                        <div class="alert alert-success py-2 small">@successMessage</div>
+                    }
+                    @if (errorMessage is not null)
+                    {
+                        <div class="alert alert-danger py-2 small">@errorMessage</div>
+                    }
+
+                    <div class="da-feature-card mb-4">
+                        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium small">Calificación</label>
+                                <select class="form-select" @bind="model.Rating">
+                                    <option value="5">★★★★★ (5)</option>
+                                    <option value="4">★★★★☆ (4)</option>
+                                    <option value="3">★★★☆☆ (3)</option>
+                                    <option value="2">★★☆☆☆ (2)</option>
+                                    <option value="1">★☆☆☆☆ (1)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium small">Curso relacionado (opcional)</label>
+                                <select class="form-select" @bind="model.CourseId">
+                                    <option value="">— Ninguno —</option>
+                                    @if (myEnrollments is not null)
+                                    {
+                                        @foreach (var enrollment in myEnrollments)
+                                        {
+                                            <option value="@enrollment.CourseId">@enrollment.CourseTitle</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium small">Tu comentario</label>
+                                <textarea class="form-control" rows="4" @bind="model.Content" placeholder="Cuenta tu experiencia con el curso o la academia"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @(isSaving ? "Enviando..." : "Enviar comentario")
+                            </button>
+                        </EditForm>
+                    </div>
+
+                    @if (myTestimonials is { Count: > 0 })
+                    {
+                        <h6 class="text-uppercase text-muted small fw-bold mt-4 mb-2">Tus comentarios enviados</h6>
+                        @foreach (var mine in myTestimonials)
+                        {
+                            <div class="d-flex justify-content-between align-items-start border-bottom py-2">
+                                <div class="me-3">
+                                    <div class="small text-warning mb-1">@(new string('★', mine.Rating))@(new string('☆', 5 - mine.Rating))</div>
+                                    <p class="small text-muted mb-0">"@mine.Content"</p>
+                                </div>
+                                @if (mine.IsPublished)
+                                {
+                                    <span class="badge bg-success">Publicado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Pendiente</span>
+                                }
+                            </div>
+                        }
+                    }
+                </Authorized>
+                <NotAuthorized>
+                    <div class="da-feature-card text-center">
+                        <p class="text-muted mb-3">Inicia sesión para dejar tu comentario.</p>
+                        <a href="/login" class="btn btn-primary">Iniciar sesión</a>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+    </div>
+</div>
+
+@code {
+    private List<TestimonialDto>? testimonials;
+    private List<MyTestimonialDto>? myTestimonials;
+    private List<EnrollmentDto>? myEnrollments;
+    private bool isLoading = true;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private readonly SubmitTestimonialModel model = new();
+    private bool isSaving;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        testimonials = await Api.GetTestimonialsAsync();
+
+        var isAuthenticated = false;
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+        }
+
+        if (isAuthenticated)
+        {
+            myEnrollments = await Api.GetMyEnrollmentsAsync();
+            myTestimonials = await Api.GetMyTestimonialsAsync();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(model.Content))
+        {
+            errorMessage = "Escribe tu comentario antes de enviarlo.";
+            return;
+        }
+
+        isSaving = true;
+
+        Guid? courseId = string.IsNullOrWhiteSpace(model.CourseId) ? null : Guid.Parse(model.CourseId);
+        var (success, error) = await Api.SubmitTestimonialAsync(model.Content.Trim(), model.Rating, courseId);
+
+        isSaving = false;
+
+        if (success)
+        {
+            successMessage = "¡Gracias! Tu comentario quedó pendiente de aprobación.";
+            model.Content = string.Empty;
+            model.CourseId = string.Empty;
+            myTestimonials = await Api.GetMyTestimonialsAsync();
+        }
+        else
+        {
+            errorMessage = error;
+        }
+    }
+
+    private sealed class SubmitTestimonialModel
+    {
+        public string Content { get; set; } = string.Empty;
+        public int Rating { get; set; } = 5;
+        public string CourseId { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,170 @@
+@page "/students"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+
+<PageTitle>Estudiantes — Dance Academy Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Estudiantes</h4>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (students is not null)
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Email</th>
+                        <th>Nombre</th>
+                        <th>Cursos inscritos</th>
+                        <th>Avance promedio</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in students)
+                    {
+                        <tr>
+                            <td class="align-middle">@student.Email</td>
+                            <td class="align-middle">@(student.FullName ?? "—")</td>
+                            <td class="align-middle">@student.EnrolledCoursesCount</td>
+                            <td class="align-middle">@student.AverageProgressPercentage.ToString("0.#")%</td>
+                            <td class="align-middle">
+                                @if (student.IsActive)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </td>
+                            <td class="align-middle text-end">
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        @onclick="() => HandleToggleDetailAsync(student.Id)"
+                                        disabled="@isLoadingDetail">
+                                    @(expandedStudentId == student.Id ? "Ocultar" : "Ver detalle")
+                                </button>
+                            </td>
+                        </tr>
+                        @if (expandedStudentId == student.Id)
+                        {
+                            <tr>
+                                <td colspan="6" class="bg-light">
+                                    @if (isLoadingDetail)
+                                    {
+                                        <div class="text-muted py-2">Cargando detalle...</div>
+                                    }
+                                    else if (detailErrorMessage is not null)
+                                    {
+                                        <div class="text-danger py-2">@detailErrorMessage</div>
+                                    }
+                                    else if (studentDetail is not null && studentDetail.Courses.Count > 0)
+                                    {
+                                        <table class="table table-sm mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Curso</th>
+                                                    <th>Inscrito el</th>
+                                                    <th>Lecciones completadas</th>
+                                                    <th>Avance</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var course in studentDetail.Courses)
+                                                {
+                                                    <tr>
+                                                        <td>@course.CourseTitle</td>
+                                                        <td>@course.EnrolledAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                                                        <td>@course.CompletedLessons / @course.TotalLessons</td>
+                                                        <td>@course.ProgressPercentage.ToString("0.#")%</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted py-2">Este estudiante no tiene cursos inscritos.</div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (students.Count == 0)
+        {
+            <div class="text-center py-4 text-muted">
+                No hay estudiantes registrados todavía.
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<AdminStudentListItemDto>? students;
+    private string? errorMessage;
+    private bool isLoading = true;
+
+    private Guid? expandedStudentId;
+    private AdminStudentDetailDto? studentDetail;
+    private bool isLoadingDetail;
+    private string? detailErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            students = await AdminApi.GetStudentsAsync();
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de estudiantes.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleToggleDetailAsync(Guid studentId)
+    {
+        if (expandedStudentId == studentId)
+        {
+            expandedStudentId = null;
+            studentDetail = null;
+            return;
+        }
+
+        expandedStudentId = studentId;
+        studentDetail = null;
+        detailErrorMessage = null;
+        isLoadingDetail = true;
+
+        try
+        {
+            studentDetail = await AdminApi.GetStudentDetailAsync(studentId);
+        }
+        catch
+        {
+            detailErrorMessage = "No se pudo cargar el detalle del estudiante.";
+        }
+        finally
+        {
+            isLoadingDetail = false;
+        }
+    }
+}

@@ -8,9 +8,12 @@
 <PageTitle>@(lesson?.Title ?? "Lección") — Dance Academy</PageTitle>
 
 <div class="container py-5">
-    <div class="mb-3">
-        <a href="/cursos/@CourseId" class="text-decoration-none text-muted small">← Volver al curso</a>
-    </div>
+    <Breadcrumb Items="@(new List<BreadcrumbItem> {
+        new("Inicio", "/"),
+        new("Cursos", "/cursos"),
+        new(courseTitle ?? "Curso", $"/cursos/{CourseId}"),
+        new(lesson?.Title ?? "Lección", null)
+    })" />
 
     @if (isLoading)
     {
@@ -82,6 +85,13 @@
                             <button class="btn btn-outline-success" disabled="@isUpdatingProgress" @onclick="HandleUnmarkCompleteAsync">
                                 ✓ Completada — clic para desmarcar
                             </button>
+
+                            @if (!showCommentPrompt)
+                            {
+                                <button class="btn btn-outline-secondary" @onclick="HandleOpenCommentPrompt">
+                                    💬 Dejar un comentario
+                                </button>
+                            }
                         }
                         else
                         {
@@ -96,6 +106,43 @@
                                 Siguiente lección →
                             </button>
                         }
+                    </div>
+                }
+
+                @if (commentSuccessMessage is not null)
+                {
+                    <div class="alert alert-success py-2 small mt-3">@commentSuccessMessage</div>
+                }
+
+                @if (showCommentPrompt)
+                {
+                    <div class="alert alert-light border mt-3">
+                        <h6 class="fw-bold mb-2">
+                            @(navigateAfterComment ? "¡Bien hecho! ¿Nos cuentas tu experiencia con este curso?" : "Cuéntanos tu experiencia con este curso")
+                        </h6>
+                        @if (commentError is not null)
+                        {
+                            <div class="alert alert-danger py-2 small">@commentError</div>
+                        }
+                        <div class="mb-2">
+                            <select class="form-select form-select-sm" style="max-width: 220px;" @bind="commentModel.Rating">
+                                <option value="5">★★★★★ (5)</option>
+                                <option value="4">★★★★☆ (4)</option>
+                                <option value="3">★★★☆☆ (3)</option>
+                                <option value="2">★★☆☆☆ (2)</option>
+                                <option value="1">★☆☆☆☆ (1)</option>
+                            </select>
+                        </div>
+                        <textarea class="form-control form-control-sm mb-2" rows="3" @bind="commentModel.Content"
+                                  placeholder="Cuenta tu experiencia con este curso"></textarea>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-primary" disabled="@isSubmittingComment" @onclick="HandleSubmitCommentAsync">
+                                @(isSubmittingComment ? "Enviando..." : "Enviar comentario")
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" disabled="@isSubmittingComment" @onclick="HandleDismissCommentPromptAsync">
+                                @(navigateAfterComment ? "Ahora no" : "Cancelar")
+                            </button>
+                        </div>
                     </div>
                 }
             </div>
@@ -137,12 +184,25 @@
     private LessonDetailDto? lesson;
     private LessonProgressDto? progress;
     private List<LessonProgressListItemDto>? courseLessons;
+    private string? courseTitle;
     private bool isLoading = true;
     private bool isUpdatingProgress;
     private string? progressError;
     private Guid? loadedLessonId;
+    private Guid? loadedCourseIdForContext;
     private bool needsVideoWatchSetup;
     private DotNetObjectReference<LessonPlayerPage>? dotNetRef;
+
+    // Comentario tras completar una lección (reusa el sistema de Testimonios) — se ofrece
+    // cada vez que se completa una lección, sin importar cuántos comentarios ya existan
+    // para el curso. También disponible a demanda ("💬 Dejar un comentario") mientras la
+    // lección ya esté marcada como completada, sin esperar a que se dispare automáticamente.
+    private bool showCommentPrompt;
+    private bool navigateAfterComment;
+    private bool isSubmittingComment;
+    private string? commentError;
+    private string? commentSuccessMessage;
+    private readonly CommentModel commentModel = new();
 
     private LessonProgressListItemDto? NextLesson
     {
@@ -186,6 +246,8 @@
         progress = null;
         courseLessons = null;
         progressError = null;
+        showCommentPrompt = false;
+        commentSuccessMessage = null;
 
         lesson = await Api.GetLessonDetailAsync(LessonId);
         isLoading = false;
@@ -208,6 +270,16 @@
 
         if (progress is not null && lesson?.EmbedUrl is not null)
             needsVideoWatchSetup = true;
+
+        // Se carga una sola vez por curso (no en cada cambio de lección dentro del mismo curso):
+        // solo el título para la miga de pan.
+        if (loadedCourseIdForContext != CourseId)
+        {
+            loadedCourseIdForContext = CourseId;
+
+            var courseDetail = await Api.GetCourseDetailAsync(CourseId);
+            courseTitle = courseDetail?.Title;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -273,10 +345,74 @@
 
         progress = progress! with { IsCompleted = true, CompletedAt = DateTimeOffset.UtcNow };
 
+        // Pausa el avance automático para ofrecer el comentario — se navega recién cuando
+        // el estudiante lo envía o lo descarta (ver HandleSubmit/DismissComment...).
+        commentSuccessMessage = null;
+        showCommentPrompt = true;
+        navigateAfterComment = true;
+    }
+
+    // Botón "💬 Dejar un comentario", visible mientras la lección ya está completada —
+    // no dispara el avance automático a la siguiente lección, solo abre el formulario.
+    private void HandleOpenCommentPrompt()
+    {
+        commentError = null;
+        commentSuccessMessage = null;
+        showCommentPrompt = true;
+        navigateAfterComment = false;
+    }
+
+    private void NavigateAfterCompletion()
+    {
         var nextLesson = NextLesson;
         Nav.NavigateTo(nextLesson is not null
             ? $"/cursos/{CourseId}/lecciones/{nextLesson.LessonId}"
             : $"/cursos/{CourseId}");
+    }
+
+    private async Task HandleSubmitCommentAsync()
+    {
+        commentError = null;
+
+        if (string.IsNullOrWhiteSpace(commentModel.Content))
+        {
+            commentError = "Escribe tu comentario antes de enviarlo.";
+            return;
+        }
+
+        isSubmittingComment = true;
+
+        var (success, error) = await Api.SubmitTestimonialAsync(commentModel.Content.Trim(), commentModel.Rating, CourseId);
+
+        isSubmittingComment = false;
+
+        if (!success)
+        {
+            commentError = error;
+            return;
+        }
+
+        commentModel.Content = string.Empty;
+        showCommentPrompt = false;
+
+        if (navigateAfterComment)
+        {
+            NavigateAfterCompletion();
+        }
+        else
+        {
+            commentSuccessMessage = "¡Gracias! Tu comentario quedó pendiente de aprobación.";
+        }
+    }
+
+    private Task HandleDismissCommentPromptAsync()
+    {
+        showCommentPrompt = false;
+
+        if (navigateAfterComment)
+            NavigateAfterCompletion();
+
+        return Task.CompletedTask;
     }
 
     private async Task HandleUnmarkCompleteAsync()
@@ -314,5 +450,11 @@
         {
             // El circuito ya se cerró (navegación fuera de la app) — nada que limpiar.
         }
+    }
+
+    private sealed class CommentModel
+    {
+        public string Content { get; set; } = string.Empty;
+        public int Rating { get; set; } = 5;
     }
 }

@@ -1,0 +1,22 @@
+@* Migas de pan: Items siempre incluye "Inicio" como primer eslabón. El último eslabón
+   (la página actual) se renderiza sin enlace. *@
+<nav aria-label="breadcrumb" class="da-breadcrumb mb-3">
+    <ol class="breadcrumb mb-0">
+        @for (var i = 0; i < Items.Count; i++)
+        {
+            var item = Items[i];
+            @if (i == Items.Count - 1 || item.Url is null)
+            {
+                <li class="breadcrumb-item active" aria-current="page">@item.Text</li>
+            }
+            else
+            {
+                <li class="breadcrumb-item"><a href="@item.Url">@item.Text</a></li>
+            }
+        }
+    </ol>
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<BreadcrumbItem> Items { get; set; } = [];
+}

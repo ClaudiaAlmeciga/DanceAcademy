@@ -66,7 +66,9 @@ public sealed record AdminDashboardSummaryDto(
     int TotalStudents,
     int TotalPublishedCourses,
     int TotalEnrollments,
-    double AverageCompletionRate
+    double AverageCompletionRate,
+    int TotalInstructors,
+    int TotalTestimonials
 );
 
 public sealed record AdminCourseStatsDto(
@@ -74,4 +76,62 @@ public sealed record AdminCourseStatsDto(
     string CourseTitle,
     int EnrollmentCount,
     double AverageCompletionRate
+);
+
+public sealed record AdminInstructorDto(
+    Guid Id,
+    string FullName,
+    string Specialty,
+    string? Bio,
+    string? PhotoUrl,
+    bool IsActive
+);
+
+public sealed record AdminTestimonialDto(
+    Guid Id,
+    string StudentName,
+    string Content,
+    int Rating,
+    Guid? CourseId,
+    string? CourseTitle,
+    string? PhotoUrl,
+    bool IsPublished
+);
+
+public sealed record AdminFaqItemDto(
+    Guid Id,
+    string Question,
+    string Answer,
+    string Category,
+    int Order,
+    bool IsActive
+);
+
+public sealed record AdminStudentCourseProgressDto(
+    Guid CourseId,
+    string CourseTitle,
+    DateTimeOffset EnrolledAt,
+    int TotalLessons,
+    int CompletedLessons,
+    double ProgressPercentage
+);
+
+public sealed record AdminStudentListItemDto(
+    Guid Id,
+    string Email,
+    string? FullName,
+    bool IsActive,
+    DateTime CreatedAt,
+    int EnrolledCoursesCount,
+    double AverageProgressPercentage
+);
+
+public sealed record AdminStudentDetailDto(
+    Guid Id,
+    string Email,
+    string? FullName,
+    string? Phone,
+    bool IsActive,
+    DateTime CreatedAt,
+    IReadOnlyList<AdminStudentCourseProgressDto> Courses
 );

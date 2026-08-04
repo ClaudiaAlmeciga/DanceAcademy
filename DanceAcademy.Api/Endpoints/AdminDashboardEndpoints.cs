@@ -23,13 +23,21 @@ public static class AdminDashboardEndpoints
             var totalStudents = await db.Users.AsNoTracking().CountAsync(u => u.Role == Roles.Student, ct);
             var totalPublishedCourses = await db.Courses.AsNoTracking().CountAsync(c => c.IsPublished, ct);
             var totalEnrollments = await db.Enrollments.AsNoTracking().CountAsync(ct);
+            var totalActiveInstructors = await db.Instructors.AsNoTracking().CountAsync(i => i.IsActive, ct);
+            var totalPublishedTestimonials = await db.Testimonials.AsNoTracking().CountAsync(t => t.IsPublished, ct);
 
             var courseStats = await GetCourseStatsAsync(db, ct);
             var averageCompletionRate = courseStats.Count == 0
                 ? 0d
                 : Math.Round(courseStats.Average(c => c.AverageCompletionRate), 2);
 
-            var summaryDto = new AdminDashboardSummaryDto(totalStudents, totalPublishedCourses, totalEnrollments, averageCompletionRate);
+            var summaryDto = new AdminDashboardSummaryDto(
+                totalStudents,
+                totalPublishedCourses,
+                totalEnrollments,
+                averageCompletionRate,
+                totalActiveInstructors,
+                totalPublishedTestimonials);
             return Results.Ok(summaryDto);
         })
         .WithName("AdminGetDashboardSummary");

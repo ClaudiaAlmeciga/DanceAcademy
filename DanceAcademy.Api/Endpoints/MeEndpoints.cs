@@ -1,5 +1,6 @@
 #nullable enable
 using DanceAcademy.Application.DTOs;
+using DanceAcademy.Application.Interfaces;
 using DanceAcademy.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -47,6 +48,38 @@ public static class MeEndpoints
 
             var profile = new MeProfileDto(user.Id, user.Email, user.Role, user.FullName, user.Phone, user.BirthDate);
             return Results.Ok(profile);
+        });
+
+        app.MapPut("/me/password", [Authorize] async (
+            [FromBody] ChangePasswordRequest request,
+            ClaimsPrincipal principal,
+            AppDbContext db,
+            IPasswordHasher passwordHasher,
+            CancellationToken ct) =>
+        {
+            var currentPassword = request.CurrentPassword;
+            var newPassword = request.NewPassword;
+
+            if (string.IsNullOrWhiteSpace(currentPassword))
+                return Results.BadRequest(new { error = "La contraseña actual es obligatoria." });
+
+            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+                return Results.BadRequest(new { error = "La nueva contraseña debe tener al menos 8 caracteres." });
+
+            var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId, ct);
+            if (user is null)
+                return Results.NotFound(new { message = "Usuario no encontrado." });
+
+            var isCurrentPasswordValid = passwordHasher.Verify(currentPassword, user.PasswordHash);
+            if (!isCurrentPasswordValid)
+                return Results.BadRequest(new { error = "La contraseña actual es incorrecta." });
+
+            user.PasswordHash = passwordHasher.Hash(newPassword);
+            await db.SaveChangesAsync(ct);
+
+            return Results.Ok(new { message = "Contraseña actualizada correctamente." });
         });
     }
 }
