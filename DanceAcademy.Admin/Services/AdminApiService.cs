@@ -153,4 +153,52 @@ public class AdminApiService(IHttpClientFactory factory)
 
     public Task<AdminStudentDetailDto?> GetStudentDetailAsync(Guid studentId, CancellationToken ct = default)
         => Client.GetFromJsonAsync<AdminStudentDetailDto>($"/admin/students/{studentId}", ct);
+
+    public Task<List<AdminEventDto>?> GetEventsAsync(CancellationToken ct = default)
+        => Client.GetFromJsonAsync<List<AdminEventDto>>("/admin/events", ct);
+
+    public Task<AdminEventDto?> GetEventDetailAsync(Guid eventId, CancellationToken ct = default)
+        => Client.GetFromJsonAsync<AdminEventDto>($"/admin/events/{eventId}", ct);
+
+    public Task<HttpResponseMessage> CreateEventAsync(CreateEventRequest request, CancellationToken ct = default)
+        => Client.PostAsJsonAsync("/admin/events", request, ct);
+
+    public Task<HttpResponseMessage> UpdateEventAsync(Guid eventId, UpdateEventRequest request, CancellationToken ct = default)
+        => Client.PutAsJsonAsync($"/admin/events/{eventId}", request, ct);
+
+    public Task<HttpResponseMessage> DeleteEventAsync(Guid eventId, CancellationToken ct = default)
+        => Client.DeleteAsync($"/admin/events/{eventId}", ct);
+
+    public Task<HttpResponseMessage> PublishEventAsync(Guid eventId, CancellationToken ct = default)
+        => Client.PatchAsync($"/admin/events/{eventId}/publish", null, ct);
+
+    public Task<HttpResponseMessage> UnpublishEventAsync(Guid eventId, CancellationToken ct = default)
+        => Client.PatchAsync($"/admin/events/{eventId}/unpublish", null, ct);
+
+    public Task<List<AdminEventRegistrationDto>?> GetEventRegistrationsAsync(Guid eventId, CancellationToken ct = default)
+        => Client.GetFromJsonAsync<List<AdminEventRegistrationDto>>($"/admin/events/{eventId}/registrations", ct);
+
+    public Task<HttpResponseMessage> MarkEventRegistrationPaidAsync(Guid eventId, Guid registrationId, CancellationToken ct = default)
+        => Client.PatchAsync($"/admin/events/{eventId}/registrations/{registrationId}/mark-paid", null, ct);
+
+    public Task<List<AdminNewsPostDto>?> GetNewsPostsAsync(CancellationToken ct = default)
+        => Client.GetFromJsonAsync<List<AdminNewsPostDto>>("/admin/news", ct);
+
+    public Task<AdminNewsPostDto?> GetNewsPostDetailAsync(Guid newsPostId, CancellationToken ct = default)
+        => Client.GetFromJsonAsync<AdminNewsPostDto>($"/admin/news/{newsPostId}", ct);
+
+    public Task<HttpResponseMessage> CreateNewsPostAsync(CreateNewsPostRequest request, CancellationToken ct = default)
+        => Client.PostAsJsonAsync("/admin/news", request, ct);
+
+    public Task<HttpResponseMessage> UpdateNewsPostAsync(Guid newsPostId, UpdateNewsPostRequest request, CancellationToken ct = default)
+        => Client.PutAsJsonAsync($"/admin/news/{newsPostId}", request, ct);
+
+    public Task<HttpResponseMessage> DeleteNewsPostAsync(Guid newsPostId, CancellationToken ct = default)
+        => Client.DeleteAsync($"/admin/news/{newsPostId}", ct);
+
+    public Task<HttpResponseMessage> PublishNewsPostAsync(Guid newsPostId, CancellationToken ct = default)
+        => Client.PatchAsync($"/admin/news/{newsPostId}/publish", null, ct);
+
+    public Task<HttpResponseMessage> UnpublishNewsPostAsync(Guid newsPostId, CancellationToken ct = default)
+        => Client.PatchAsync($"/admin/news/{newsPostId}/unpublish", null, ct);
 }

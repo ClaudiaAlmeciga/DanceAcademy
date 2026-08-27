@@ -1,0 +1,127 @@
+@page "/news/{newsPostId:guid}/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Editar noticia — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/news" class="text-decoration-none text-muted small">← Volver a noticias</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <div class="card shadow-sm" style="max-width: 560px;">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Editar noticia</h5>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label">Título <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Title" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fecha de la actividad <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" @bind="model.PublishedAt" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Contenido <span class="text-danger">*</span></label>
+                    <textarea class="form-control" rows="6" @bind="model.Content"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">URL de imagen</label>
+                    <input class="form-control" @bind="model.ImageUrl" />
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                    <a href="/news" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid NewsPostId { get; set; }
+
+    private readonly NewsEditModel model = new();
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var post = await AdminApi.GetNewsPostDetailAsync(NewsPostId);
+            if (post is null)
+            {
+                loadError = "Noticia no encontrada.";
+                return;
+            }
+            model.Title = post.Title;
+            model.Content = post.Content;
+            model.ImageUrl = post.ImageUrl;
+            model.PublishedAt = post.PublishedAt.LocalDateTime.Date;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar la noticia.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title) || string.IsNullOrWhiteSpace(model.Content))
+        {
+            errorMessage = "Título y contenido son obligatorios.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var request = new UpdateNewsPostRequest(model.Title.Trim(), model.Content.Trim(), model.ImageUrl, new DateTimeOffset(model.PublishedAt).ToUniversalTime());
+        var response = await AdminApi.UpdateNewsPostAsync(NewsPostId, request);
+
+        isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/news");
+        }
+        else
+        {
+            errorMessage = $"Error al guardar (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private sealed class NewsEditModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
+        public DateTime PublishedAt { get; set; }
+    }
+}

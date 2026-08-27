@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>DanceAcademy.Public</RootNamespace>
+    <UserSecretsId>9e084c50-efd0-4737-b284-88416e05f398</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

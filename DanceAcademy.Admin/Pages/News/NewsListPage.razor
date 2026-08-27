@@ -1,0 +1,131 @@
+@page "/news"
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Noticias — Dance Academy Admin</PageTitle>
+
+@inject AdminApiService AdminApi
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Noticias</h4>
+    <a class="btn btn-primary btn-sm" href="/news/new">+ Nueva noticia</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (news is not null)
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Título</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var post in news)
+                    {
+                        <tr>
+                            <td class="align-middle">@post.Title</td>
+                            <td class="align-middle">@post.PublishedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                            <td class="align-middle">
+                                @if (post.IsPublished)
+                                {
+                                    <span class="badge bg-success">Publicado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Borrador</span>
+                                }
+                            </td>
+                            <td class="align-middle text-end">
+                                <a class="btn btn-sm btn-outline-secondary me-1" href="/news/@post.Id/edit">
+                                    Editar
+                                </a>
+                                @if (post.IsPublished)
+                                {
+                                    <button class="btn btn-sm btn-outline-warning" @onclick="() => HandleUnpublishAsync(post.Id)" disabled="@isBusy">
+                                        Ocultar
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => HandlePublishAsync(post.Id)" disabled="@isBusy">
+                                        Publicar
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!news.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                No hay noticias. <a href="/news/new">Crea la primera.</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<AdminNewsPostDto>? news;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            news = await AdminApi.GetNewsPostsAsync();
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de noticias.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandlePublishAsync(Guid newsPostId)
+    {
+        isBusy = true;
+        var response = await AdminApi.PublishNewsPostAsync(newsPostId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            await LoadAsync();
+        else
+            errorMessage = "No se pudo publicar la noticia.";
+    }
+
+    private async Task HandleUnpublishAsync(Guid newsPostId)
+    {
+        isBusy = true;
+        var response = await AdminApi.UnpublishNewsPostAsync(newsPostId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            await LoadAsync();
+        else
+            errorMessage = "No se pudo ocultar la noticia.";
+    }
+}

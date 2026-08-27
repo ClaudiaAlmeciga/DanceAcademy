@@ -19,6 +19,9 @@ public sealed class AppDbContext : DbContext
     public DbSet<Testimonial> Testimonials => Set<Testimonial>();
     public DbSet<FaqItem> FaqItems => Set<FaqItem>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<Event> Events => Set<Event>();
+    public DbSet<EventRegistration> EventRegistrations => Set<EventRegistration>();
+    public DbSet<NewsPost> NewsPosts => Set<NewsPost>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

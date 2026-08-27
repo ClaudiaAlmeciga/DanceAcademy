@@ -122,6 +122,11 @@ app.MapPublicFaqEndpoints();
 app.MapMeCertificatesEndpoints();
 app.MapAdminStudentsEndpoints();
 app.MapMeTestimonialsEndpoints();
+app.MapAdminEventsEndpoints();
+app.MapPublicEventsEndpoints();
+app.MapMeEventRegistrationsEndpoints();
+app.MapAdminNewsEndpoints();
+app.MapPublicNewsEndpoints();
 
 // Seed Admin
 await app.SeedAdminAsync();

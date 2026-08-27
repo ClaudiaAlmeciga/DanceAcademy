@@ -27,3 +27,9 @@ public sealed record UpdateInstructorRequest(string FullName, string Specialty, 
 
 public sealed record CreateFaqItemRequest(string Question, string Answer, string Category, int Order);
 public sealed record UpdateFaqItemRequest(string Question, string Answer, string Category, int Order, bool IsActive);
+
+public sealed record CreateEventRequest(string Title, string? Description, string? Location, DateTimeOffset EventDate, decimal Price, int Capacity, string? ImageUrl);
+public sealed record UpdateEventRequest(string Title, string? Description, string? Location, DateTimeOffset EventDate, decimal Price, int Capacity, string? ImageUrl);
+
+public sealed record CreateNewsPostRequest(string Title, string Content, string? ImageUrl, DateTimeOffset PublishedAt);
+public sealed record UpdateNewsPostRequest(string Title, string Content, string? ImageUrl, DateTimeOffset PublishedAt);

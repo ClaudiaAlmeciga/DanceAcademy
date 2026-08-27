@@ -1,0 +1,91 @@
+@page "/mis-eventos"
+@attribute [Authorize]
+
+@inject PublicApiService Api
+
+<PageTitle>Mis Eventos — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Mis Eventos", null) })" />
+    <h2 class="fw-bold mb-4">Mis eventos</h2>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (loadError is not null)
+    {
+        <div class="alert alert-danger">@loadError</div>
+    }
+    else if (registrations is null || registrations.Count == 0)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5 mb-3">Todavía no estás inscrito en ningún evento.</p>
+            <a href="/eventos" class="btn btn-primary">Ver eventos</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var reg in registrations)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="da-course-card">
+                        @if (!string.IsNullOrWhiteSpace(reg.ImageUrl))
+                        {
+                            <img src="@reg.ImageUrl" alt="@reg.EventTitle" class="w-100" style="height: 160px; object-fit: cover;" />
+                        }
+                        <div class="da-course-card-body">
+                            <span class="badge bg-light text-dark border mb-2">@reg.EventDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</span>
+                            <h5 class="da-course-title">@reg.EventTitle</h5>
+                            @if (!string.IsNullOrWhiteSpace(reg.Location))
+                            {
+                                <p class="text-muted small mb-2">📍 @reg.Location</p>
+                            }
+                            <p class="fw-semibold mb-2">$@reg.Price.ToString("N0")</p>
+                            @if (reg.Status == EventRegistrationStatus.Paid)
+                            {
+                                <span class="badge bg-success">Pago confirmado</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Pendiente de pago</span>
+                            }
+                        </div>
+                        <div class="da-course-card-footer">
+                            <a href="/eventos/@reg.EventId" class="btn btn-outline-primary btn-sm w-100">Ver detalle</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<MyEventRegistrationDto>? registrations;
+    private string? loadError;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            registrations = await Api.GetMyEventRegistrationsAsync();
+            if (registrations is null)
+                loadError = "No se pudieron cargar tus eventos.";
+        }
+        catch
+        {
+            loadError = "No se pudieron cargar tus eventos.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -16,8 +16,17 @@ public static class SeedExtensions
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Seed");
 
-        var adminEmail = (config["Seed:AdminEmail"] ?? "admin@danceacademy.local").Trim();
-        var adminPassword = config["Seed:AdminPassword"] ?? "Admin12345!";
+        var adminEmail = config["Seed:AdminEmail"]?.Trim();
+        var adminPassword = config["Seed:AdminPassword"];
+
+        // Sin credenciales configuradas (Seed:AdminEmail / Seed:AdminPassword), no se crea ningún
+        // admin. Antes había un fallback fijo ("Admin12345!") — un default público y adivinable es
+        // peor que no sembrar nada.
+        if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+        {
+            logger.LogWarning("Seed Admin: Seed:AdminEmail / Seed:AdminPassword no configurados. No se creó ningún admin.");
+            return;
+        }
 
         // Idempotente: si existe, no crea duplicados
         var exists = await db.Users.AnyAsync(u => u.Email == adminEmail);

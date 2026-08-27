@@ -1,0 +1,64 @@
+@page "/noticias"
+
+@inject PublicApiService Api
+
+<PageTitle>Noticias — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Noticias", null) })" />
+    <h2 class="fw-bold mb-2">Noticias</h2>
+    <p class="text-muted mb-4">Lo último de nuestras actividades, muestras y logros de los estudiantes.</p>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (news is null || news.Count == 0)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Todavía no hay noticias publicadas.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var post in news)
+            {
+                <div class="col-lg-4 col-md-6">
+                    <div class="da-course-card">
+                        @if (!string.IsNullOrWhiteSpace(post.ImageUrl))
+                        {
+                            <img src="@post.ImageUrl" alt="@post.Title" class="w-100" style="height: 160px; object-fit: cover;" />
+                        }
+                        <div class="da-course-card-body">
+                            <span class="text-muted small mb-1 d-block">@post.PublishedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
+                            <h5 class="da-course-title">@post.Title</h5>
+                            <p class="da-course-description text-muted">@Excerpt(post.Content)</p>
+                        </div>
+                        <div class="da-course-card-footer">
+                            <a href="/noticias/@post.Id" class="btn btn-outline-primary btn-sm w-100">Leer más</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<NewsPostDto>? news;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        news = await Api.GetNewsAsync();
+        isLoading = false;
+    }
+
+    private static string Excerpt(string content)
+        => content.Length <= 160 ? content : content[..160].TrimEnd() + "…";
+}

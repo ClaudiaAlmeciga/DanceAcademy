@@ -1,0 +1,87 @@
+@page "/news/new"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Nueva noticia — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/news" class="text-decoration-none text-muted small">← Volver a noticias</a>
+</div>
+
+<div class="card shadow-sm" style="max-width: 560px;">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Nueva noticia</h5>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Título <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Title" placeholder="Ej: Muestra de fin de trimestre" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Fecha de la actividad <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" @bind="model.PublishedAt" @bind:format="yyyy-MM-dd" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Contenido <span class="text-danger">*</span></label>
+                <textarea class="form-control" rows="6" @bind="model.Content"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">URL de imagen</label>
+                <input class="form-control" @bind="model.ImageUrl" placeholder="https://..." />
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @(isLoading ? "Guardando..." : "Crear noticia")
+                </button>
+                <a href="/news" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly NewsCreateModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title) || string.IsNullOrWhiteSpace(model.Content))
+        {
+            errorMessage = "Título y contenido son obligatorios.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var request = new CreateNewsPostRequest(model.Title.Trim(), model.Content.Trim(), model.ImageUrl, new DateTimeOffset(model.PublishedAt).ToUniversalTime());
+        var response = await AdminApi.CreateNewsPostAsync(request);
+
+        isLoading = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/news");
+        }
+        else
+        {
+            errorMessage = $"Error al crear la noticia (HTTP {(int)response.StatusCode}). Intenta de nuevo.";
+        }
+    }
+
+    private sealed class NewsCreateModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
+        public DateTime PublishedAt { get; set; } = DateTime.Now.Date;
+    }
+}
