@@ -28,6 +28,12 @@
                     <NavLink class="nav-link" href="/testimonios" Match="NavLinkMatch.Prefix">Testimonios</NavLink>
                 </li>
                 <li class="nav-item">
+                    <NavLink class="nav-link" href="/eventos" Match="NavLinkMatch.Prefix">Eventos</NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/noticias" Match="NavLinkMatch.Prefix">Noticias</NavLink>
+                </li>
+                <li class="nav-item">
                     <NavLink class="nav-link" href="/nosotros" Match="NavLinkMatch.Prefix">Nosotros</NavLink>
                 </li>
             </ul>
@@ -36,6 +42,7 @@
                 <AuthorizeView>
                     <Authorized>
                         <a class="nav-link small me-1" href="/mis-cursos">Mis Cursos</a>
+                        <a class="nav-link small me-1" href="/mis-eventos">Mis Eventos</a>
                         <a class="nav-link small me-1" href="/perfil">Mi Perfil</a>
                         <a class="nav-link small me-1" href="/cuenta">Mi Cuenta</a>
                         <span class="text-muted small me-1">@context.User.FindFirst(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value</span>

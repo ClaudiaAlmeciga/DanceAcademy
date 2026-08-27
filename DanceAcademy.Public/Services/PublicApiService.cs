@@ -329,6 +329,72 @@ public class PublicApiService(
         return await response.Content.ReadFromJsonAsync<CertificateDto>(cancellationToken: ct);
     }
 
+    public async Task<List<EventDto>?> GetEventsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/public/events", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<EventDto>>(cancellationToken: ct);
+    }
+
+    public async Task<EventDto?> GetEventDetailAsync(Guid eventId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/public/events/{eventId}", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<EventDto>(cancellationToken: ct);
+    }
+
+    public async Task<List<MyEventRegistrationDto>?> GetMyEventRegistrationsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/me/event-registrations", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<MyEventRegistrationDto>>(cancellationToken: ct);
+    }
+
+    public async Task<(bool Success, string? Error)> RegisterForEventAsync(Guid eventId, CancellationToken ct = default)
+    {
+        var response = await Client.PostAsJsonAsync("/me/event-registrations", new CreateEventRegistrationRequest(eventId), ct);
+
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<MessageResponse>(cancellationToken: ct);
+            if (body?.Message is not null)
+                return (false, body.Message);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // El cuerpo de la respuesta de error no era JSON — se usa el mensaje genérico.
+        }
+
+        return (false, "No se pudo completar la inscripción. Intenta de nuevo.");
+    }
+
+    public async Task<List<NewsPostDto>?> GetNewsAsync(CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync("/public/news", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<List<NewsPostDto>>(cancellationToken: ct);
+    }
+
+    public async Task<NewsPostDto?> GetNewsDetailAsync(Guid newsPostId, CancellationToken ct = default)
+    {
+        var response = await Client.GetAsync($"/public/news/{newsPostId}", ct);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<NewsPostDto>(cancellationToken: ct);
+    }
+
     private sealed record TokenResponse(
         [property: JsonPropertyName("access_token")] string AccessToken
     );

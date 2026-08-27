@@ -24,3 +24,23 @@ public sealed record FaqItemDto(
     string Answer,
     string Category
 );
+
+public sealed record EventDto(
+    Guid Id,
+    string Title,
+    string? Description,
+    string? Location,
+    DateTimeOffset EventDate,
+    decimal Price,
+    int Capacity,
+    int AvailableSpots,
+    string? ImageUrl
+);
+
+public sealed record NewsPostDto(
+    Guid Id,
+    string Title,
+    string Content,
+    string? ImageUrl,
+    DateTimeOffset PublishedAt
+);

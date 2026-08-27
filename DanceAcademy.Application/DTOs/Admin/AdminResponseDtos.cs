@@ -135,3 +135,35 @@ public sealed record AdminStudentDetailDto(
     DateTime CreatedAt,
     IReadOnlyList<AdminStudentCourseProgressDto> Courses
 );
+
+public sealed record AdminEventDto(
+    Guid Id,
+    string Title,
+    string? Description,
+    string? Location,
+    DateTimeOffset EventDate,
+    decimal Price,
+    int Capacity,
+    int RegisteredCount,
+    string? ImageUrl,
+    bool IsPublished
+);
+
+public sealed record AdminEventRegistrationDto(
+    Guid Id,
+    Guid UserId,
+    string UserEmail,
+    string? UserFullName,
+    EventRegistrationStatus Status,
+    DateTimeOffset RegisteredAt,
+    DateTimeOffset? PaidAt
+);
+
+public sealed record AdminNewsPostDto(
+    Guid Id,
+    string Title,
+    string Content,
+    string? ImageUrl,
+    DateTimeOffset PublishedAt,
+    bool IsPublished
+);

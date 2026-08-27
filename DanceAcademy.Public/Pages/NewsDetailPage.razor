@@ -1,0 +1,49 @@
+@page "/noticias/{NewsPostId:guid}"
+
+@inject PublicApiService Api
+
+<PageTitle>@(post?.Title ?? "Noticia") — Dance Academy</PageTitle>
+
+<div class="container py-5">
+    <Breadcrumb Items="@(new List<BreadcrumbItem> { new("Inicio", "/"), new("Noticias", "/noticias"), new(post?.Title ?? "Noticia", null) })" />
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (post is null)
+    {
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Noticia no encontrada o no disponible.</p>
+        </div>
+    }
+    else
+    {
+        <span class="text-muted small mb-2 d-block">@post.PublishedAt.ToLocalTime().ToString("dddd dd 'de' MMMM yyyy", CultureInfo)</span>
+        <h2 class="fw-bold mb-3">@post.Title</h2>
+        @if (!string.IsNullOrWhiteSpace(post.ImageUrl))
+        {
+            <img src="@post.ImageUrl" alt="@post.Title" class="img-fluid rounded mb-4" style="max-height: 420px; object-fit: cover; width: 100%;" />
+        }
+        <p style="white-space: pre-wrap;">@post.Content</p>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid NewsPostId { get; set; }
+
+    private static readonly System.Globalization.CultureInfo CultureInfo = new("es-ES");
+
+    private NewsPostDto? post;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        post = await Api.GetNewsDetailAsync(NewsPostId);
+        isLoading = false;
+    }
+}

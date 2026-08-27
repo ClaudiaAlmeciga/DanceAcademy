@@ -23,4 +23,12 @@
     <ProjectReference Include="..\DanceAcademy.Infrastructure\DanceAcademy.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!-- Solo en desarrollo local en Windows (F5 en Visual Studio): asegura que Docker Desktop y la
+       base de datos estén levantados antes de correr la API. No afecta al CI (Ubuntu, Release). -->
+  <Target Name="EnsureLocalDbRunning" BeforeTargets="Build"
+          Condition="'$(OS)' == 'Windows_NT' AND '$(Configuration)' == 'Debug'">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)..\scripts\start-db.ps1&quot;"
+          ContinueOnError="true" />
+  </Target>
+
 </Project>

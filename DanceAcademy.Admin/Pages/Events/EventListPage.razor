@@ -1,0 +1,138 @@
+@page "/events"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+
+<PageTitle>Eventos — Dance Academy Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Eventos</h4>
+    <a class="btn btn-primary btn-sm" href="/events/new">+ Nuevo evento</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (events is not null)
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Título</th>
+                        <th>Fecha</th>
+                        <th>Precio</th>
+                        <th>Cupo</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ev in events)
+                    {
+                        <tr>
+                            <td class="align-middle">@ev.Title</td>
+                            <td class="align-middle">@ev.EventDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="align-middle">$@ev.Price.ToString("N0")</td>
+                            <td class="align-middle">@ev.RegisteredCount / @ev.Capacity</td>
+                            <td class="align-middle">
+                                @if (ev.IsPublished)
+                                {
+                                    <span class="badge bg-success">Publicado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Borrador</span>
+                                }
+                            </td>
+                            <td class="align-middle text-end">
+                                <a class="btn btn-sm btn-outline-secondary me-1" href="/events/@ev.Id/registrations">
+                                    Inscritos
+                                </a>
+                                <a class="btn btn-sm btn-outline-secondary me-1" href="/events/@ev.Id/edit">
+                                    Editar
+                                </a>
+                                @if (ev.IsPublished)
+                                {
+                                    <button class="btn btn-sm btn-outline-warning" @onclick="() => HandleUnpublishAsync(ev.Id)" disabled="@isBusy">
+                                        Ocultar
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => HandlePublishAsync(ev.Id)" disabled="@isBusy">
+                                        Publicar
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!events.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                No hay eventos. <a href="/events/new">Crea el primero.</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<AdminEventDto>? events;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            events = await AdminApi.GetEventsAsync();
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de eventos.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandlePublishAsync(Guid eventId)
+    {
+        isBusy = true;
+        var response = await AdminApi.PublishEventAsync(eventId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            await LoadAsync();
+        else
+            errorMessage = "No se pudo publicar el evento.";
+    }
+
+    private async Task HandleUnpublishAsync(Guid eventId)
+    {
+        isBusy = true;
+        var response = await AdminApi.UnpublishEventAsync(eventId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            await LoadAsync();
+        else
+            errorMessage = "No se pudo ocultar el evento.";
+    }
+}

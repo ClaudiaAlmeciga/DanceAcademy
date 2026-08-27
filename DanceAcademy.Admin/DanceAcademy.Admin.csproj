@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>DanceAcademy.Admin</RootNamespace>
+    <UserSecretsId>59a71bd4-1a8c-410c-961b-8717195788a0</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

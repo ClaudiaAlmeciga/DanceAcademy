@@ -1,0 +1,122 @@
+@page "/events/{eventId:guid}/registrations"
+@attribute [Authorize(Roles = "Admin")]
+@using DanceAcademy.Domain.Entities
+
+@inject AdminApiService AdminApi
+
+<PageTitle>Inscritos — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/events" class="text-decoration-none text-muted small">← Volver a eventos</a>
+</div>
+
+<h4 class="mb-3">Inscritos@(eventTitle is not null ? $" — {eventTitle}" : "")</h4>
+<p class="text-muted small mb-3">
+    La pasarela de pago para eventos todavía no está conectada. Cuando el pago se confirme por fuera del sistema, márcalo aquí como pagado.
+</p>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (registrations is not null)
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Estudiante</th>
+                        <th>Email</th>
+                        <th>Inscrito el</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var reg in registrations)
+                    {
+                        <tr>
+                            <td class="align-middle">@(reg.UserFullName ?? "—")</td>
+                            <td class="align-middle">@reg.UserEmail</td>
+                            <td class="align-middle">@reg.RegisteredAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="align-middle">
+                                @if (reg.Status == EventRegistrationStatus.Paid)
+                                {
+                                    <span class="badge bg-success">Pagado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Pendiente de pago</span>
+                                }
+                            </td>
+                            <td class="align-middle text-end">
+                                @if (reg.Status == EventRegistrationStatus.Pending)
+                                {
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => HandleMarkPaidAsync(reg.Id)" disabled="@isBusy">
+                                        Marcar como pagado
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!registrations.Any())
+        {
+            <div class="text-center py-4 text-muted">
+                Todavía no hay inscritos a este evento.
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid EventId { get; set; }
+
+    private List<AdminEventRegistrationDto>? registrations;
+    private string? eventTitle;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var ev = await AdminApi.GetEventDetailAsync(EventId);
+            eventTitle = ev?.Title;
+            registrations = await AdminApi.GetEventRegistrationsAsync(EventId);
+        }
+        catch
+        {
+            errorMessage = "No se pudo cargar la lista de inscritos.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleMarkPaidAsync(Guid registrationId)
+    {
+        isBusy = true;
+        var response = await AdminApi.MarkEventRegistrationPaidAsync(EventId, registrationId);
+        isBusy = false;
+
+        if (response.IsSuccessStatusCode)
+            await LoadAsync();
+        else
+            errorMessage = "No se pudo marcar la inscripción como pagada.";
+    }
+}

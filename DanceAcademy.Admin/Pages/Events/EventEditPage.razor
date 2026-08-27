@@ -1,0 +1,159 @@
+@page "/events/{eventId:guid}/edit"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Editar evento — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/events" class="text-decoration-none text-muted small">← Volver a eventos</a>
+</div>
+
+@if (isLoading)
+{
+    <div class="text-center py-5 text-muted">Cargando...</div>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">@loadError</div>
+}
+else
+{
+    <div class="card shadow-sm" style="max-width: 560px;">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Editar evento</h5>
+
+            @if (errorMessage is not null)
+            {
+                <div class="alert alert-danger py-2 small">@errorMessage</div>
+            }
+
+            <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+                <div class="mb-3">
+                    <label class="form-label">Título <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="model.Title" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea class="form-control" rows="4" @bind="model.Description"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Lugar</label>
+                    <input class="form-control" @bind="model.Location" />
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha y hora <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" @bind="model.EventDate" @bind:format="yyyy-MM-ddTHH:mm" />
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Precio <span class="text-danger">*</span></label>
+                        <input type="number" min="0" step="1000" class="form-control" @bind="model.Price" />
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Cupo <span class="text-danger">*</span></label>
+                        <input type="number" min="1" step="1" class="form-control" @bind="model.Capacity" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">URL de imagen</label>
+                    <input class="form-control" @bind="model.ImageUrl" placeholder="https://..." />
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                        @(isSaving ? "Guardando..." : "Guardar cambios")
+                    </button>
+                    <a href="/events" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid EventId { get; set; }
+
+    private readonly EventEditModel model = new();
+    private string? loadError;
+    private string? errorMessage;
+    private bool isLoading = true;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var ev = await AdminApi.GetEventDetailAsync(EventId);
+            if (ev is null)
+            {
+                loadError = "Evento no encontrado.";
+                return;
+            }
+            model.Title = ev.Title;
+            model.Description = ev.Description;
+            model.Location = ev.Location;
+            model.EventDate = ev.EventDate.LocalDateTime;
+            model.Price = ev.Price;
+            model.Capacity = ev.Capacity;
+            model.ImageUrl = ev.ImageUrl;
+        }
+        catch
+        {
+            loadError = "No se pudo cargar el evento.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "El título es obligatorio.";
+            return;
+        }
+        if (model.Capacity < 1)
+        {
+            errorMessage = "El cupo debe ser al menos 1.";
+            return;
+        }
+        if (model.Price < 0)
+        {
+            errorMessage = "El precio no puede ser negativo.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+
+        var request = new UpdateEventRequest(
+            model.Title.Trim(), model.Description, model.Location,
+            new DateTimeOffset(model.EventDate).ToUniversalTime(), model.Price, model.Capacity, model.ImageUrl);
+        var response = await AdminApi.UpdateEventAsync(EventId, request);
+
+        isSaving = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/events");
+        }
+        else
+        {
+            errorMessage = $"Error al guardar (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private sealed class EventEditModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? Location { get; set; }
+        public DateTime EventDate { get; set; }
+        public decimal Price { get; set; }
+        public int Capacity { get; set; } = 1;
+        public string? ImageUrl { get; set; }
+    }
+}

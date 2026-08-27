@@ -1,0 +1,116 @@
+@page "/events/new"
+@attribute [Authorize(Roles = "Admin")]
+
+@inject AdminApiService AdminApi
+@inject NavigationManager Nav
+
+<PageTitle>Nuevo evento — Dance Academy Admin</PageTitle>
+
+<div class="mb-3">
+    <a href="/events" class="text-decoration-none text-muted small">← Volver a eventos</a>
+</div>
+
+<div class="card shadow-sm" style="max-width: 560px;">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Nuevo evento</h5>
+
+        @if (errorMessage is not null)
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <EditForm Model="@model" OnValidSubmit="HandleSubmitAsync">
+            <div class="mb-3">
+                <label class="form-label">Título <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="model.Title" placeholder="Ej: Noche de Salsa Abierta" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Descripción</label>
+                <textarea class="form-control" rows="4" @bind="model.Description"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Lugar</label>
+                <input class="form-control" @bind="model.Location" placeholder="Ej: Salón principal" />
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha y hora <span class="text-danger">*</span></label>
+                    <input type="datetime-local" class="form-control" @bind="model.EventDate" @bind:format="yyyy-MM-ddTHH:mm" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Precio <span class="text-danger">*</span></label>
+                    <input type="number" min="0" step="1000" class="form-control" @bind="model.Price" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cupo <span class="text-danger">*</span></label>
+                    <input type="number" min="1" step="1" class="form-control" @bind="model.Capacity" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">URL de imagen</label>
+                <input class="form-control" @bind="model.ImageUrl" placeholder="https://..." />
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isLoading">
+                    @(isLoading ? "Guardando..." : "Crear evento")
+                </button>
+                <a href="/events" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly EventCreateModel model = new();
+    private string? errorMessage;
+    private bool isLoading;
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "El título es obligatorio.";
+            return;
+        }
+        if (model.Capacity < 1)
+        {
+            errorMessage = "El cupo debe ser al menos 1.";
+            return;
+        }
+        if (model.Price < 0)
+        {
+            errorMessage = "El precio no puede ser negativo.";
+            return;
+        }
+
+        isLoading = true;
+        errorMessage = null;
+
+        var request = new CreateEventRequest(
+            model.Title.Trim(), model.Description, model.Location,
+            new DateTimeOffset(model.EventDate).ToUniversalTime(), model.Price, model.Capacity, model.ImageUrl);
+        var response = await AdminApi.CreateEventAsync(request);
+
+        isLoading = false;
+
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/events");
+        }
+        else
+        {
+            errorMessage = $"Error al crear el evento (HTTP {(int)response.StatusCode}). Intenta de nuevo.";
+        }
+    }
+
+    private sealed class EventCreateModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? Location { get; set; }
+        public DateTime EventDate { get; set; } = DateTime.Now.Date.AddDays(7).AddHours(19);
+        public decimal Price { get; set; }
+        public int Capacity { get; set; } = 20;
+        public string? ImageUrl { get; set; }
+    }
+}
