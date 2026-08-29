@@ -8,7 +8,9 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    types {
-        application/wasm wasm;
-    }
+    # No declarar un bloque "types { }" propio: reemplaza por completo la tabla MIME
+    # por defecto de nginx (incluida globalmente vía mime.types), dejando TODO —
+    # incluido .html— como application/octet-stream. Eso hace que el navegador intente
+    # descargar la página en vez de mostrarla. La tabla por defecto de nginx ya
+    # incluye .wasm correctamente, así que no hace falta tocarla.
 }
