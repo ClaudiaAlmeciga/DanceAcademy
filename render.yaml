@@ -39,6 +39,10 @@ services:
         sync: false
       - key: SendGrid__ApiKey
         sync: false
+      - key: Swagger__Username
+        sync: false
+      - key: Swagger__Password
+        sync: false
       - key: App__PublicUrl
         value: https://danceacademy-public.onrender.com
       - key: Cors__AllowedOrigins__0

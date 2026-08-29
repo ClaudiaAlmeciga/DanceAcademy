@@ -113,11 +113,45 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Swagger: en Development queda abierto (como siempre). Fuera de Development (ej. Render)
+// se protege con Basic Auth — la página de Swagger se navega directo en el browser, sin
+// token JWT adjunto, así que [Authorize] normal no aplica; Basic Auth es el estándar para
+// este caso. Sin Swagger:Username/Swagger:Password configurados, queda oculto (404).
+app.Use(async (context, next) =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    if (!context.Request.Path.StartsWithSegments("/swagger") || app.Environment.IsDevelopment())
+    {
+        await next();
+        return;
+    }
+
+    var swaggerUser = app.Configuration["Swagger:Username"];
+    var swaggerPassword = app.Configuration["Swagger:Password"];
+
+    if (string.IsNullOrWhiteSpace(swaggerUser) || string.IsNullOrWhiteSpace(swaggerPassword))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    var header = context.Request.Headers.Authorization.ToString();
+    if (header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+    {
+        var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(header["Basic ".Length..]));
+        var parts = decoded.Split(':', 2);
+        if (parts.Length == 2 && parts[0] == swaggerUser && parts[1] == swaggerPassword)
+        {
+            await next();
+            return;
+        }
+    }
+
+    context.Response.Headers.WWWAuthenticate = "Basic realm=\"Swagger\"";
+    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+});
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseCors("WebClients");
