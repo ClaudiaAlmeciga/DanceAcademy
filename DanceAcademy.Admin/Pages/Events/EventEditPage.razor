@@ -53,7 +53,11 @@ else
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Cupo <span class="text-danger">*</span></label>
-                        <input type="number" min="1" step="1" class="form-control" @bind="model.Capacity" />
+                        <input type="number" min="@(Math.Max(1, registeredCount))" step="1" class="form-control" @bind="model.Capacity" />
+                        @if (registeredCount > 0)
+                        {
+                            <div class="form-text">Ya hay @registeredCount inscrito(s).</div>
+                        }
                     </div>
                 </div>
                 <div class="mb-3">
@@ -79,6 +83,7 @@ else
     private string? errorMessage;
     private bool isLoading = true;
     private bool isSaving;
+    private int registeredCount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -97,6 +102,7 @@ else
             model.Price = ev.Price;
             model.Capacity = ev.Capacity;
             model.ImageUrl = ev.ImageUrl;
+            registeredCount = ev.RegisteredCount;
         }
         catch
         {
@@ -118,6 +124,11 @@ else
         if (model.Capacity < 1)
         {
             errorMessage = "El cupo debe ser al menos 1.";
+            return;
+        }
+        if (model.Capacity < registeredCount)
+        {
+            errorMessage = $"El cupo no puede ser menor que las {registeredCount} inscripciones ya registradas.";
             return;
         }
         if (model.Price < 0)
