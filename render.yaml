@@ -12,6 +12,12 @@
 #
 # Variables marcadas "sync: false" NO se guardan en este archivo (que es público) —
 # Render te las pedirá una por una la primera vez, a través de su dashboard.
+#
+# ConnectionStrings__Default ahora es manual (sync: false): la base de datos real vive en
+# Neon (free tier sin expiración), no en el Postgres de Render de abajo. El recurso
+# "danceacademy-db" se deja declarado por ahora para no arriesgar un borrado automático por
+# el sync del Blueprint; se elimina a mano desde el dashboard una vez confirmado que todo
+# funciona con Neon.
 
 databases:
   - name: danceacademy-db
@@ -28,9 +34,7 @@ services:
     plan: free
     envVars:
       - key: ConnectionStrings__Default
-        fromDatabase:
-          name: danceacademy-db
-          property: connectionString
+        sync: false
       - key: Jwt__Key
         sync: false
       - key: Seed__AdminEmail
