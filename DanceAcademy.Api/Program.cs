@@ -153,6 +153,16 @@ app.MapMeEventRegistrationsEndpoints();
 app.MapAdminNewsEndpoints();
 app.MapPublicNewsEndpoints();
 
+// Aplica migraciones pendientes al arrancar. En local ya se aplican a mano con
+// "dotnet ef database update", pero en un despliegue nuevo (ej. Render, con una base
+// de datos recién creada) no hay ningún paso separado que lo haga — sin esto, la base
+// queda sin tablas y el seed de abajo (y cualquier request) falla.
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 // Seed Admin
 await app.SeedAdminAsync();
 
