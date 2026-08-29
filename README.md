@@ -140,11 +140,11 @@ docker-compose.yml            PostgreSQL local
 
 ## Despliegue
 
-El repositorio incluye un blueprint de [Render](https://render.com) (`render.yaml`) que despliega los 3 servicios (Api, Admin, Public, cada uno como imagen Docker) más una base de datos PostgreSQL gestionada.
+El repositorio incluye un blueprint de [Render](https://render.com) (`render.yaml`) que despliega los 3 servicios (Api, Admin, Public, cada uno como imagen Docker). La base de datos PostgreSQL vive en [Neon](https://neon.tech) (free tier sin expiración) en vez de en el Postgres gestionado de Render, que en el plan gratis expira a los 90 días.
 
 1. En el dashboard de Render: **New → Blueprint** → selecciona este repositorio.
-2. Render detecta `render.yaml` y crea automáticamente `danceacademy-db`, `danceacademy-api`, `danceacademy-admin` y `danceacademy-public`.
-3. Te pedirá los valores de las variables marcadas como secretas (nunca están en el archivo, que es público): `Jwt:Key` (una clave larga y aleatoria, distinta a la de desarrollo), `Seed:AdminEmail`/`Seed:AdminPassword` (credenciales del primer admin) y `SendGrid:ApiKey` (opcional).
+2. Render detecta `render.yaml` y crea automáticamente `danceacademy-api`, `danceacademy-admin` y `danceacademy-public`.
+3. Te pedirá los valores de las variables marcadas como secretas (nunca están en el archivo, que es público): `ConnectionStrings:Default` (connection string de tu proyecto en Neon), `Jwt:Key` (una clave larga y aleatoria, distinta a la de desarrollo), `Seed:AdminEmail`/`Seed:AdminPassword` (credenciales del primer admin), `SendGrid:ApiKey` (opcional) y `Swagger:Username`/`Swagger:Password` (protegen `/swagger` en producción).
 4. Si alguno de los nombres de servicio (`danceacademy-api`, `danceacademy-admin`, `danceacademy-public`) ya está tomado por otra cuenta de Render, tendrás que renombrarlo y actualizar las referencias cruzadas — ver los comentarios al inicio de `render.yaml`.
 
 ## Tests
