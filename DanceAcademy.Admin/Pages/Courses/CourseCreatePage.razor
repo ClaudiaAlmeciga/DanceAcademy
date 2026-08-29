@@ -42,6 +42,14 @@
                           placeholder="Descripción del curso (opcional)"></textarea>
             </div>
             <div class="mb-3">
+                <label class="form-label">URL de imagen de portada</label>
+                <input class="form-control" @bind="model.ImageUrl" placeholder="https://..." />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Duración estimada (horas)</label>
+                <input type="number" min="1" step="1" class="form-control" style="max-width: 160px;" @bind="model.DurationHours" />
+            </div>
+            <div class="mb-3">
                 <label class="form-label">Tipo de precio <span class="text-danger">*</span></label>
                 <select class="form-select" @bind="model.PricingType">
                     <option value="@PricingType.Free">Gratis</option>
@@ -130,7 +138,7 @@
         errorMessage = null;
 
         var planIds = AllowsPlans(model.PricingType) ? model.SubscriptionPlanIds.ToList() : new List<Guid>();
-        var request = new CreateCourseRequest(model.Title.Trim(), model.LevelId, model.Description?.Trim(), model.PricingType, price, planIds);
+        var request = new CreateCourseRequest(model.Title.Trim(), model.LevelId, model.Description?.Trim(), model.PricingType, price, planIds, model.ImageUrl, model.DurationHours);
         var response = await AdminApi.CreateCourseAsync(request);
 
         isLoading = false;
@@ -160,6 +168,8 @@
         public string Title { get; set; } = string.Empty;
         public Guid LevelId { get; set; }
         public string? Description { get; set; }
+        public string? ImageUrl { get; set; }
+        public int? DurationHours { get; set; }
         public PricingType PricingType { get; set; } = PricingType.Free;
         public decimal? Price { get; set; }
         public HashSet<Guid> SubscriptionPlanIds { get; set; } = new();

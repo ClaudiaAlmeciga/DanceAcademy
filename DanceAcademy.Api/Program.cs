@@ -10,14 +10,21 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// CORS — permite que los clientes Blazor WASM consuman la API
+// CORS — permite que los clientes Blazor WASM consuman la API.
+// Los orígenes de localhost siempre se permiten (desarrollo). Los de producción se leen de
+// configuración (Cors:AllowedOrigins, ej. variables de entorno Cors__AllowedOrigins__0/__1)
+// en vez de quedar fijos en el código — así un cambio de dominio no requiere tocar el código.
+var corsOrigins = new List<string>
+{
+    "http://localhost:5241", "https://localhost:7282", // Admin (dev)
+    "http://localhost:5182", "https://localhost:7284"  // Public (dev)
+};
+corsOrigins.AddRange(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? []);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebClients", policy =>
-        policy.WithOrigins(
-                  "http://localhost:5241",  "https://localhost:7282",  // Admin
-                  "http://localhost:5182",  "https://localhost:7284"   // Public
-              )
+        policy.WithOrigins(corsOrigins.ToArray())
               .AllowAnyMethod()
               .AllowAnyHeader());
 });

@@ -10,18 +10,24 @@ public sealed class Course
         string title,
         Guid levelId,
         string? description = null,
-        bool isPublished = false)
+        bool isPublished = false,
+        string? imageUrl = null,
+        int? durationHours = null)
     {
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("El título del curso es obligatorio.", nameof(title));
         if (levelId == Guid.Empty)
             throw new ArgumentException("LevelId es obligatorio.", nameof(levelId));
+        if (durationHours is <= 0)
+            throw new ArgumentOutOfRangeException(nameof(durationHours), "La duración debe ser mayor a 0.");
 
         Id = Guid.NewGuid();
         Title = title.Trim();
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
         LevelId = levelId;
         IsPublished = isPublished;
+        ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
+        DurationHours = durationHours;
         PricingType = PricingType.Free;
         Price = null;
         CreatedAt = DateTimeOffset.UtcNow;
@@ -32,6 +38,8 @@ public sealed class Course
     public string? Description { get; private set; }
     public Guid LevelId { get; private set; }
     public bool IsPublished { get; private set; }
+    public string? ImageUrl { get; private set; }
+    public int? DurationHours { get; private set; }
     public PricingType PricingType { get; private set; } = PricingType.Free;
     public decimal? Price { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
@@ -94,13 +102,17 @@ public sealed class Course
         Touch();
     }
 
-    public void UpdateDetails(string title, string? description)
+    public void UpdateDetails(string title, string? description, string? imageUrl, int? durationHours)
     {
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("El título del curso es obligatorio.", nameof(title));
+        if (durationHours is <= 0)
+            throw new ArgumentOutOfRangeException(nameof(durationHours), "La duración debe ser mayor a 0.");
 
         Title = title.Trim();
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
+        DurationHours = durationHours;
         Touch();
     }
 

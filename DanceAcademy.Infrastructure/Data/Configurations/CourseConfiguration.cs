@@ -22,6 +22,11 @@ public sealed class CourseConfiguration : IEntityTypeConfiguration<Course>
 
         b.Property(x => x.LevelId).IsRequired();
 
+        b.Property(x => x.ImageUrl)
+            .HasMaxLength(500);
+
+        b.Property(x => x.DurationHours);
+
         b.Property(x => x.PricingType)
             .HasConversion<string>()
             .HasMaxLength(30)

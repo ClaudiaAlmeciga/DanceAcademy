@@ -29,7 +29,9 @@ public sealed record AdminCourseListItemDto(
     PricingType PricingType,
     decimal? Price,
     int ModuleCount,
-    int LessonCount
+    int LessonCount,
+    string? ImageUrl,
+    int? DurationHours
 );
 
 public sealed record AdminCourseDetailDto(
@@ -42,7 +44,9 @@ public sealed record AdminCourseDetailDto(
     PricingType PricingType,
     decimal? Price,
     IReadOnlyList<Guid> SubscriptionPlanIds,
-    IReadOnlyList<AdminModuleDto> Modules
+    IReadOnlyList<AdminModuleDto> Modules,
+    string? ImageUrl,
+    int? DurationHours
 );
 
 public sealed record AdminLevelDto(

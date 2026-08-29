@@ -10,7 +10,9 @@ public sealed record CourseListItemDto(
     Guid LevelId,
     string LevelName,
     PricingType PricingType,
-    decimal? Price
+    decimal? Price,
+    string? ImageUrl,
+    int? DurationHours
 );
 
 public sealed record ModuleDto(
@@ -29,7 +31,9 @@ public sealed record CourseDetailDto(
     PricingType PricingType,
     decimal? Price,
     IReadOnlyList<SubscriptionPlanDto> SubscriptionPlans,
-    IReadOnlyList<ModuleDto> Modules
+    IReadOnlyList<ModuleDto> Modules,
+    string? ImageUrl,
+    int? DurationHours
 );
 
 public sealed record SubscriptionPlanDto(

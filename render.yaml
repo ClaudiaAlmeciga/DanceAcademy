@@ -1,0 +1,63 @@
+# Blueprint de despliegue en Render (render.com).
+#
+# Uso: en el dashboard de Render, "New" -> "Blueprint" -> conectar este repositorio.
+# Render detecta este archivo y crea los 4 recursos automáticamente.
+#
+# Los nombres de servicio ("danceacademy-api", "danceacademy-admin", "danceacademy-public")
+# determinan la URL pública (https://<nombre>.onrender.com). Si alguno ya está tomado por
+# otra cuenta de Render, tendrás que renombrarlo aquí Y actualizar:
+#   - DanceAcademy.Admin/wwwroot/appsettings.Production.json (ApiBaseUrl)
+#   - DanceAcademy.Public/wwwroot/appsettings.Production.json (ApiBaseUrl)
+#   - la variable App__PublicUrl y Cors__AllowedOrigins de abajo
+#
+# Variables marcadas "sync: false" NO se guardan en este archivo (que es público) —
+# Render te las pedirá una por una la primera vez, a través de su dashboard.
+
+databases:
+  - name: danceacademy-db
+    plan: free
+    databaseName: danceacademy
+    user: danceacademy
+
+services:
+  - type: web
+    name: danceacademy-api
+    runtime: docker
+    dockerfilePath: ./DanceAcademy.Api/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: danceacademy-db
+          property: connectionString
+      - key: Jwt__Key
+        sync: false
+      - key: Seed__AdminEmail
+        sync: false
+      - key: Seed__AdminPassword
+        sync: false
+      - key: SendGrid__ApiKey
+        sync: false
+      - key: App__PublicUrl
+        value: https://danceacademy-public.onrender.com
+      - key: Cors__AllowedOrigins__0
+        value: https://danceacademy-admin.onrender.com
+      - key: Cors__AllowedOrigins__1
+        value: https://danceacademy-public.onrender.com
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+
+  - type: web
+    name: danceacademy-admin
+    runtime: docker
+    dockerfilePath: ./DanceAcademy.Admin/Dockerfile
+    dockerContext: .
+    plan: free
+
+  - type: web
+    name: danceacademy-public
+    runtime: docker
+    dockerfilePath: ./DanceAcademy.Public/Dockerfile
+    dockerContext: .
+    plan: free
