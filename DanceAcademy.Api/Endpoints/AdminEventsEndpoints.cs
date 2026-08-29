@@ -88,6 +88,13 @@ public static class AdminEventsEndpoints
             if (ev is null)
                 return Results.NotFound(new { message = "Evento no encontrado." });
 
+            var registeredCount = await db.EventRegistrations.AsNoTracking().CountAsync(r => r.EventId == eventId, ct);
+
+            // El cupo no puede bajar por debajo de las inscripciones ya existentes —
+            // de lo contrario "cupos disponibles" en el sitio público quedaría negativo.
+            if (request.Capacity < registeredCount)
+                return Results.BadRequest(new { message = $"El cupo no puede ser menor que las {registeredCount} inscripciones ya registradas." });
+
             try
             {
                 ev.UpdateDetails(request.Title, request.Description, request.Location, request.EventDate, request.Price, request.Capacity, request.ImageUrl);
@@ -98,8 +105,6 @@ public static class AdminEventsEndpoints
             }
 
             await db.SaveChangesAsync(ct);
-
-            var registeredCount = await db.EventRegistrations.AsNoTracking().CountAsync(r => r.EventId == eventId, ct);
 
             return Results.Ok(new AdminEventDto(ev.Id, ev.Title, ev.Description, ev.Location, ev.EventDate, ev.Price, ev.Capacity, registeredCount, ev.ImageUrl, ev.IsPublished));
         })
