@@ -1,0 +1,14 @@
+server {
+    listen ${PORT};
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA (Blazor WebAssembly): cualquier ruta que no sea un archivo real cae a index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    types {
+        application/wasm wasm;
+    }
+}

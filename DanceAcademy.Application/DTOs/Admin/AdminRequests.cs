@@ -2,8 +2,8 @@ using DanceAcademy.Domain.Entities;
 
 namespace DanceAcademy.Application.DTOs.Admin;
 
-public sealed record CreateCourseRequest(string Title, Guid LevelId, string? Description, PricingType PricingType, decimal? Price, IReadOnlyList<Guid> SubscriptionPlanIds);
-public sealed record UpdateCourseRequest(string Title, Guid LevelId, string? Description, PricingType PricingType, decimal? Price, IReadOnlyList<Guid> SubscriptionPlanIds);
+public sealed record CreateCourseRequest(string Title, Guid LevelId, string? Description, PricingType PricingType, decimal? Price, IReadOnlyList<Guid> SubscriptionPlanIds, string? ImageUrl, int? DurationHours);
+public sealed record UpdateCourseRequest(string Title, Guid LevelId, string? Description, PricingType PricingType, decimal? Price, IReadOnlyList<Guid> SubscriptionPlanIds, string? ImageUrl, int? DurationHours);
 
 public sealed record CreateModuleRequest(string Title, int Order);
 public sealed record UpdateModuleRequest(string Title, int Order);

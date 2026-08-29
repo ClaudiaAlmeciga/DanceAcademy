@@ -36,7 +36,9 @@ public static class AdminCoursesEndpoints
                     c.PricingType,
                     c.Price,
                     c.Modules.Count,
-                    c.Modules.SelectMany(m => m.Lessons).Count()
+                    c.Modules.SelectMany(m => m.Lessons).Count(),
+                    c.ImageUrl,
+                    c.DurationHours
                 ))
                 .ToListAsync(ct);
 
@@ -97,7 +99,9 @@ public static class AdminCoursesEndpoints
                             ))
                             .ToList()
                     ))
-                    .ToList()
+                    .ToList(),
+                course.ImageUrl,
+                course.DurationHours
             );
 
             return Results.Ok(courseDetailDto);
@@ -135,10 +139,10 @@ public static class AdminCoursesEndpoints
             if (plans.Count != planIds.Distinct().Count())
                 return Results.BadRequest(new { message = "Uno o más SubscriptionPlanIds son inválidos." });
 
-            var course = new Course(title, request.LevelId, description, isPublished: false);
-
+            Course course;
             try
             {
+                course = new Course(title, request.LevelId, description, isPublished: false, request.ImageUrl, request.DurationHours);
                 course.SetPricing(request.PricingType, request.Price);
                 course.SetSubscriptionPlans(plans);
             }
@@ -158,7 +162,9 @@ public static class AdminCoursesEndpoints
                 course.LevelId,
                 course.IsPublished,
                 course.PricingType,
-                course.Price
+                course.Price,
+                course.ImageUrl,
+                course.DurationHours
             });
         })
         .WithName("AdminCreateCourse");
@@ -202,11 +208,10 @@ public static class AdminCoursesEndpoints
             if (plans.Count != planIds.Distinct().Count())
                 return Results.BadRequest(new { message = "Uno o más SubscriptionPlanIds son inválidos." });
 
-            course.UpdateDetails(title, string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim());
-            course.SetLevel(request.LevelId);
-
             try
             {
+                course.UpdateDetails(title, string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(), request.ImageUrl, request.DurationHours);
+                course.SetLevel(request.LevelId);
                 course.SetPricing(request.PricingType, request.Price);
                 course.SetSubscriptionPlans(plans);
             }
@@ -225,7 +230,9 @@ public static class AdminCoursesEndpoints
                 course.LevelId,
                 course.IsPublished,
                 course.PricingType,
-                course.Price
+                course.Price,
+                course.ImageUrl,
+                course.DurationHours
             });
         })
         .WithName("AdminUpdateCourse");

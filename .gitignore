@@ -23,6 +23,10 @@ Thumbs.db
 # Secrets (no subir credenciales)
 **/appsettings.*.json
 !**/appsettings.json
+# Excepción: appsettings.Production.json de los WASM (Admin/Public) no tiene secretos,
+# solo la URL pública de la API — Docker lo necesita para el build de despliegue.
+!DanceAcademy.Admin/wwwroot/appsettings.Production.json
+!DanceAcademy.Public/wwwroot/appsettings.Production.json
 
 #docs
 /docs/

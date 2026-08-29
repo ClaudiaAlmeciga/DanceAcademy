@@ -52,7 +52,9 @@ public static class PublicCoursesEndpoints
                     c.LevelId,
                     db.Levels.Where(l => l.Id == c.LevelId).Select(l => l.Name).SingleOrDefault() ?? "",
                     c.PricingType,
-                    c.Price
+                    c.Price,
+                    c.ImageUrl,
+                    c.DurationHours
                 ))
                 .ToListAsync(ct);
 
@@ -97,7 +99,9 @@ public static class PublicCoursesEndpoints
                                 .Select(l => new LessonDto(l.Id, l.Title, l.Order, l.VideoUrl != null))
                                 .ToList()
                         ))
-                        .ToList()
+                        .ToList(),
+                    c.ImageUrl,
+                    c.DurationHours
                 ))
                 .SingleOrDefaultAsync(ct);
 

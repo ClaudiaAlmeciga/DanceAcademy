@@ -151,7 +151,41 @@ public class CourseTests
     {
         var course = new Course("Salsa", ValidLevelId);
 
-        Assert.Throws<ArgumentException>(() => course.UpdateDetails("", "desc"));
+        Assert.Throws<ArgumentException>(() => course.UpdateDetails("", "desc", null, null));
+    }
+
+    [Fact]
+    public void Constructor_WithImageUrlAndDuration_SetsFields()
+    {
+        var course = new Course("Salsa", ValidLevelId, imageUrl: "https://example.com/salsa.jpg", durationHours: 10);
+
+        Assert.Equal("https://example.com/salsa.jpg", course.ImageUrl);
+        Assert.Equal(10, course.DurationHours);
+    }
+
+    [Fact]
+    public void Constructor_WithZeroDurationHours_ThrowsArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Course("Salsa", ValidLevelId, durationHours: 0));
+    }
+
+    [Fact]
+    public void UpdateDetails_WithValidImageUrlAndDuration_UpdatesFields()
+    {
+        var course = new Course("Salsa", ValidLevelId);
+
+        course.UpdateDetails("Salsa", "desc", "https://example.com/nueva.jpg", 8);
+
+        Assert.Equal("https://example.com/nueva.jpg", course.ImageUrl);
+        Assert.Equal(8, course.DurationHours);
+    }
+
+    [Fact]
+    public void UpdateDetails_WithZeroDurationHours_ThrowsArgumentOutOfRangeException()
+    {
+        var course = new Course("Salsa", ValidLevelId);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => course.UpdateDetails("Salsa", "desc", null, 0));
     }
 
     [Fact]

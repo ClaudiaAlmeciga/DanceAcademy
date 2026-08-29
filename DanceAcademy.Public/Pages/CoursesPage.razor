@@ -47,9 +47,17 @@
             {
                 <div class="col-lg-4 col-md-6">
                     <div class="da-course-card">
+                        @if (!string.IsNullOrWhiteSpace(course.ImageUrl))
+                        {
+                            <img src="@course.ImageUrl" alt="@course.Title" class="w-100" style="height: 160px; object-fit: cover;" />
+                        }
                         <div class="da-course-card-body">
                             <span class="badge badge-level mb-2">@course.LevelName</span>
                             <span class="badge bg-light text-dark border mb-2 ms-1">@PricingLabel(course.PricingType, course.Price)</span>
+                            @if (course.DurationHours is > 0)
+                            {
+                                <span class="badge bg-light text-dark border mb-2 ms-1">⏱ @course.DurationHours h</span>
+                            }
                             <h5 class="da-course-title">@course.Title</h5>
                             @if (!string.IsNullOrWhiteSpace(course.Description))
                             {
