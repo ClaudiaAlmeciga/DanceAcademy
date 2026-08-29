@@ -35,6 +35,24 @@ var cs = builder.Configuration.GetConnectionString("Default");
 if (string.IsNullOrWhiteSpace(cs))
     throw new InvalidOperationException("Falta ConnectionStrings:Default en appsettings.json.");
 
+// Proveedores como Render entregan la cadena de conexión de Postgres en formato URI
+// (postgres://usuario:clave@host:puerto/basededatos), pero Npgsql espera el formato
+// ADO.NET (Host=...;Port=...;Database=...). Se convierte automáticamente si hace falta,
+// así el mismo appsettings/user-secrets local (ADO.NET) y el de producción (URI) funcionan
+// sin tocar código.
+if (cs.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+    cs.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+{
+    var uri = new Uri(cs);
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = Uri.UnescapeDataString(userInfo[0]);
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+    var port = uri.Port > 0 ? uri.Port : 5432;
+
+    cs = $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')};" +
+         $"Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+}
+
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseNpgsql(cs));
 
 // DI
