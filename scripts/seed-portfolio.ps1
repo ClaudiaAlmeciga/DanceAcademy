@@ -377,7 +377,7 @@ $imgTangoDim    = "https://images.unsplash.com/photo-1760428299850-338d418e2bb4?
 $imgBachata     = "https://images.unsplash.com/photo-1736552723645-9ce633f134c6?w=1200&q=80&auto=format&fit=crop"
 $imgClub1       = "https://images.unsplash.com/photo-1766650551665-45f1998bd671?w=1200&q=80&auto=format&fit=crop"
 $imgClub2       = "https://plus.unsplash.com/premium_photo-1661369901339-f6ac6d76541f?w=1200&q=80&auto=format&fit=crop"
-$imgTeacherKids = "https://plus.unsplash.com/premium_photo-1683121017652-300eca35b669?w=1200&q=80&auto=format&fit=crop"
+$imgTangoTeacher = "https://images.unsplash.com/photo-1663691219171-93494f63b5c9?w=1200&q=80&auto=format&fit=crop"
 $imgTeacherF1   = "https://plus.unsplash.com/premium_photo-1663011483768-2cd153a2d07a?w=1200&q=80&auto=format&fit=crop"
 $imgManSmile    = "https://images.unsplash.com/photo-1527585743534-7113e3211270?w=1200&q=80&auto=format&fit=crop"
 $imgWomanSmile  = "https://images.unsplash.com/photo-1687360440094-949b8fe71c8c?w=1200&q=80&auto=format&fit=crop"
@@ -422,7 +422,7 @@ Write-Host "4) Asegurando instructores ..." -ForegroundColor Cyan
 Ensure-Instructor -FullName "Camila Torres" -Specialty "Salsa y Bachata" -Bio "Instructora certificada de salsa y bachata con más de 8 años enseñando baile social en academias y eventos privados." -PhotoUrl $imgTeacherF1 -AdminToken $adminToken
 Ensure-Instructor -FullName "Andrés Rodríguez" -Specialty "Hip Hop y Danza Urbana" -Bio "Bailarín y coreógrafo de danza urbana, ha representado a Colombia en competencias internacionales de hip hop." -PhotoUrl $imgManSmile -AdminToken $adminToken
 Ensure-Instructor -FullName "Valentina Gómez" -Specialty "Ballet y Danza Contemporánea" -Bio "Formada en ballet clásico, combina técnica y expresión contemporánea en clases pensadas para todos los niveles." -PhotoUrl $imgWomanSmile -AdminToken $adminToken
-Ensure-Instructor -FullName "Isabella Ramírez" -Specialty "Tango y Danzas de Salón" -Bio "Bailarina de tango con formación en Buenos Aires, enseña la técnica y la conexión de pareja propias del tango argentino." -PhotoUrl $imgTeacherKids -AdminToken $adminToken
+Ensure-Instructor -FullName "Isabella Ramírez" -Specialty "Tango y Danzas de Salón" -Bio "Bailarina de tango con formación en Buenos Aires, enseña la técnica y la conexión de pareja propias del tango argentino." -PhotoUrl $imgTangoTeacher -AdminToken $adminToken
 
 # ---------------------------------------------------------------------------
 # 5) Cursos
