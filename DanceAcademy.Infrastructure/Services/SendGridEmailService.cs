@@ -29,7 +29,7 @@ public sealed class SendGridEmailService(
         var subject = "Restablecer contraseña — Dance Academy";
         var html    = $"""
             <p>Recibimos una solicitud para restablecer tu contraseña.</p>
-            <p><a href="{resetLink}" style="background:#4f46e5;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">Restablecer contraseña</a></p>
+            <p><a href="{resetLink}" style="background:#A31E3F;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;">Restablecer contraseña</a></p>
             <p>El enlace expira en <strong>1 hora</strong>.</p>
             <p>Si no solicitaste este cambio, ignora este mensaje.</p>
             """;

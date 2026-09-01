@@ -25,7 +25,11 @@ public static class AuthEndpoints
             if (request is null)
                 return Results.BadRequest(new { error = "Body requerido." });
 
-            var email = request.Email?.Trim();
+            // El email se normaliza a minúsculas antes de guardarlo o compararlo — sin esto,
+            // "Usuario@Mail.com" y "usuario@mail.com" se tratarían como cuentas distintas
+            // (Postgres compara texto de forma sensible a mayúsculas por defecto), y el flujo
+            // de "olvidé mi contraseña" (que sí normaliza) nunca encontraría al usuario.
+            var email = request.Email?.Trim().ToLowerInvariant();
             var password = request.Password;
 
             if (string.IsNullOrWhiteSpace(email))
@@ -119,7 +123,8 @@ public static class AuthEndpoints
             if (request is null)
                 return Results.BadRequest(new { error = "Body requerido." });
 
-            var email = request.Email?.Trim();
+            // Misma normalización que en /auth/register — el email se guarda en minúsculas.
+            var email = request.Email?.Trim().ToLowerInvariant();
             var password = request.Password;
 
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
@@ -150,10 +155,4 @@ public static class AuthEndpoints
             return Results.Ok(new { access_token = new JwtSecurityTokenHandler().WriteToken(token) });
         });
     }
-}
-
-public static class Roles
-{
-    public const string Admin = "Admin";
-    public const string Student = "Student";
 }
