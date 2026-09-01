@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using DanceAcademy.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 
 namespace DanceAcademy.Api.Endpoints;

@@ -62,7 +62,7 @@ builder.Services.AddInfrastructure();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    // Definici�n de seguridad: Bearer JWT
+    // Definición de seguridad: Bearer JWT
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -70,10 +70,10 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Ingrese el token as�: Bearer {token}"
+        Description = "Ingrese el token así: Bearer {token}"
     });
 
-    // Requisito global (para que Swagger muestre el candado y el bot�n Authorize)
+    // Requisito global (para que Swagger muestre el candado y el botón Authorize)
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {

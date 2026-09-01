@@ -16,7 +16,10 @@ public static class SeedExtensions
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Seed");
 
-        var adminEmail = config["Seed:AdminEmail"]?.Trim();
+        // Normalizado a minúsculas — igual que en /auth/register y /auth/login — para que el
+        // admin sembrado pueda iniciar sesión sin importar cómo se haya escrito el email en
+        // la configuración.
+        var adminEmail = config["Seed:AdminEmail"]?.Trim().ToLowerInvariant();
         var adminPassword = config["Seed:AdminPassword"];
 
         // Sin credenciales configuradas (Seed:AdminEmail / Seed:AdminPassword), no se crea ningún
